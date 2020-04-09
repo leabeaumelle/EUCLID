@@ -1,0 +1,48 @@
+$title
+[1] "Metadata for natural enemies raw dataset"
+
+$README
+[1] "Arthropods were sampled three times (sessions) in June, August, September, using three sampling methods\nat 9 vineyard sites were two treatments (flower strips vs. grassy strips) were applied to separate plots.\nNatural enemies belonging to 4 orders (Araneae, Neuroptera, Dermaptera, Opiliones) were counted\nand identified to the lowest possible taxonomic resolution. Abundances are sums of number of individuals\ncollected from several sampling units per sampling method per session (HOW MANY?). Each row is a taxonomic group,\nwhen there were e.g. no Araneae, a row for Araneae is created with abundance = 0. When there were several species of\n  Araneae, several rows for each species and their respective abundance is created. There are NAs when the sampling\ncould not be done (especially for sweaping (fauchage) and beating (battage) when no vegetation was present \n(due to drought and/or farmer had to remove vegetation. "
+
+[[3]]
+       columns
+1       couple
+2        bande
+3          mod
+4        piege
+5         code
+6         date
+7        order
+8       family
+9        genus
+10     species
+11         eff
+12     session
+13       Rspec
+14        Rgen
+15 Rspec_taxon
+16  Rgen_taxon
+17       code2
+18       code3
+19       codex
+                                                                                                                                 values
+1                                                                                                                      name of the site
+2                                                                                           treatment modality (grassy or flower strip)
+3                                                                distance (m) to the right border of the strip where sampling conducted
+4                                                                                        sampling method (pitfall, sweaping or beating)
+5                                                                                                                                      
+6                                                                                                               french date of sampling
+7                                                                                                                                      
+8                                                                                                                                      
+9                                                                                                                                      
+10                                                                                                                                     
+11 number of individuals for the taxonomic group considered, total abundance across several sampling units that were pooled per session
+12                                                                                     sampling session (three sessions were conducted)
+13                                            x marked rows are relevant to compute species richness: individuals are id to the species
+14                                               x marked rows are relevant to compute genera richess: individuals are id to the genera
+15                                           full name of the taxonomic group for species richness calculations (family_genera_species)
+16                                                    full name of the taxonomic group for genera richness calculations (family_genera)
+17                                                                                                                                     
+18                                                                                                                                     
+19                                                                                                                                     
+
