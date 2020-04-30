@@ -28,8 +28,8 @@ library(MASS)
 # library("sjstats")
 
 ## Load data---------------------------------------------------------------------------
-NEData <- read.csv("Output/NatEnemies_clean.csv")
-
+# NEData <- read.csv("Output/NatEnemies_clean.csv")
+Abundance <- read.csv("Output/AbundanceClean.csv")
 ## Run model---------------------------------------------------------------------------
 totEN <- glmer.nb(Y ~ Landscp*Treatment*Community + Treatment*Distc*Community + 
                     (1|Site/Session) ,

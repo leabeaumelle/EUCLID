@@ -26,7 +26,7 @@ MetaDataEN <- list(
 at 9 vineyard sites were two treatments (flower strips vs. grassy strips) were applied to separate plots.
 Natural enemies belonging to 4 orders (Araneae, Neuroptera, Dermaptera, Opiliones) were counted
 and identified to the lowest possible taxonomic resolution. Abundances are sums of number of individuals
-collected from several sampling units per sampling method per session (HOW MANY?). Each row is a taxonomic group,
+collected from several sampling units (pitfall traps) per sampling method per session (HOW MANY?). Each row is a taxonomic group,
 when there were e.g. no Araneae, a row for Araneae is created with abundance = 0. When there were several species of
   Araneae, several rows for each species and their respective abundance is created. There are NAs when the sampling
 could not be done (especially for sweaping (fauchage) and beating (battage) when no vegetation was present 
