@@ -71,6 +71,8 @@ nrow(TA)
 # complete combination would be 648 observations
 nrow(expand_grid(Site = c(1:12), Treatment = c("high", "low"), Guild=c("Soil", "Vegetation", "Vine"), Distance = c(0,15,30), session=c(1:3)))
 
+## Add explanatory var
+Abundance <- left_join(Abundance, subset(NE, select=c(Site,Ldscp)), by="Site")
 write.csv(Abundance, "Output/AbundanceClean.csv")
 
 
