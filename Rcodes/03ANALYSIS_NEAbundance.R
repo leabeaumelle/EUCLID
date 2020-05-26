@@ -21,6 +21,7 @@ library(lme4)
 library(MuMIn)
 library(DHARMa)
 library(MASS)
+library(sjPlot)
 
 # from previous codes
 # library(lmerTest)
@@ -33,6 +34,7 @@ Abundance$Site <- as.factor(Abundance$Site)
 
 Ldscp <- read.csv("Output/Landscapevars.csv")
 Ldscp$Site <- as.factor(as.character(Ldscp$couple))
+Ldscp$Ldscp <- Ldscp$HSN1000
 
 Abundance <- left_join(Abundance, Ldscp, by = "Site")
 Abundance$Site <- as.factor(Abundance$Site)
@@ -43,10 +45,10 @@ summary(Abundance$Total)
 hist(Abundance$Total)
 
 par(mfrow=c(2,2))
-plot(Abundance$Total ~ Abundance$Site)
-plot(Abundance$Total ~ Abundance$Treatment)
-plot(Abundance$Total ~ Abundance$Distance)
-plot(Abundance$Total ~ Abundance$Guild)
+plot(Abundance$Total ~ Abundance$Site, varwidth = TRUE)
+plot(Abundance$Total ~ Abundance$Treatment, varwidth = TRUE)
+plot(Abundance$Total ~ factor(Abundance$Distance), varwidth = TRUE)
+plot(Abundance$Total ~ Abundance$Guild, varwidth = TRUE)
 par(mfrow=c(1,1))
 
 # Missing values
@@ -57,11 +59,20 @@ table(Abundance$Site, Abundance$session, Abundance$Guild)
 # vine samplings in session 1 for all treatments at site 10, and for high div treatment at site 9: for ALL distances
 # vegetation sampling at distance 0m at site 10 for both treatments, and at site 9 for high div treatment 
 
+# Extreme values
+dotchart(Abundance$Total)
+
+# Pairplots
+pairs(Abundance[,c("Total", "Treatment", "Ldscp", "Guild", "Distance", "Site", "session")])
+
+# Landscape relationships across treatments
+plot(Abundance$Total ~ Abundance$Ldscp)
+xyplot(Total ~ Ldscp |factor(Treatment)*factor(Guild)*factor(Distance), data = Abundance)
 
 ## Modelling-----------------------------------
 mod1 <- glmer.nb(Total ~ Ldscp*Treatment*Guild + Treatment*Distance*Guild + 
                     (1|Site/session) ,
-                  data=Abundance) #, control=glmerControl(optimizer="bobyqa"))
+                  data=Abundance, control=glmerControl(optimizer="bobyqa"))
 
 
 ## Run model---------------------------------------------------------------------------
