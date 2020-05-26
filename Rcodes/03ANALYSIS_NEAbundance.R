@@ -32,8 +32,11 @@ Abundance <- read.csv("Output/AbundanceClean.csv")
 Abundance$Site <- as.factor(Abundance$Site)
 
 Ldscp <- read.csv("Output/Landscapevars.csv")
+Ldscp$Site <- as.factor(as.character(Ldscp$couple))
 
-  
+Abundance <- left_join(Abundance, Ldscp, by = "Site")
+Abundance$Site <- as.factor(Abundance$Site)
+
 ## Descriptive stats and plot--------------------
 summary(Abundance$Total)
 
@@ -46,10 +49,13 @@ plot(Abundance$Total ~ Abundance$Distance)
 plot(Abundance$Total ~ Abundance$Guild)
 par(mfrow=c(1,1))
 
+# Missing values
+
+
 ## Modelling-----------------------------------
 mod1 <- glmer.nb(Total ~ Ldscp*Treatment*Guild + Treatment*Distance*Guild + 
                     (1|Site/session) ,
-                  data=Abundance, control=glmerControl(optimizer="bobyqa"))
+                  data=Abundance) #, control=glmerControl(optimizer="bobyqa"))
 
 
 ## Run model---------------------------------------------------------------------------

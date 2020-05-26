@@ -40,7 +40,7 @@ filter(NE, is.na(eff)) %>% group_by(Site, Treatment, Guild, Distance, session) %
 
 # Based on planning of sampling, should have NA for Vegetation in high div and low div treatments in site 9, 
 # and in site 10, should be NA for all Vine and Vegetation samplings 
-filter(NE, Site=="9") %>% group_by(Treatment, Guild, Distance, session) %>% summarize(mean(eff), min(eff), max(eff)) %>% View
+filter(NE, Site=="9") %>% group_by(Treatment, Guild, Distance, session) %>% summarize(mean(eff), min(eff), max(eff)) %>% View()
 
 with(filter(NE, Site=="9"), table(Treatment, Guild, Distance, session))
 # Missing rows: Vegetation at 15 and 30m for all sessions and all treatments
@@ -50,29 +50,30 @@ with(filter(NE, Site=="9"), table(Treatment, Guild, Distance, session))
 ## Remove all NAs from dataset
 NE <- na.omit(NE)
 
-## Missing values are not random: table shows that for Vegetation sampling (Guild), 
+## Missing values are not random: table shows that for Vegetation sampling 
 # none of the sites have data for Distance 15 and 30 m
-# vegetation was absent due to drought (except in strips) and samplin was impossible
+# vegetation was absent due to drought (except in strips) and sampling was impossible
 NE %>% group_by(Guild, Distance) %>% summarize(n())
 
 NE %>% group_by(Site, Treatment, Guild, Distance, session) %>% summarize(n())
-
-
 
 ## 1. Calculate abundance-------------------
 
 ## Total abundance per guild, distance and session----------------------------------------
 Abundance <- NE %>% group_by(Site, Treatment, Guild, Distance, session) %>% 
-  summarize(Total = sum(eff))
+  summarize(Total = sum(eff)) %>% ungroup()
 
 ## Missing values--------------------------
-# we have 348 observations
-nrow(TA)
+# we have 366 observations
+nrow(Abundance)
 # complete combination would be 648 observations
-nrow(expand_grid(Site = c(1:12), Treatment = c("high", "low"), Guild=c("Soil", "Vegetation", "Vine"), Distance = c(0,15,30), session=c(1:3)))
+nrow(expand_grid(Site = c(1:12), 
+                 Treatment = c("high", "low"), 
+                 Guild=c("Soil", "Vegetation", "Vine"), 
+                 Distance = c(0,15,30), 
+                 session=c(1:3)))
 
-## Add explanatory var
-Abundance <- left_join(Abundance, subset(NE, select=c(Site,Ldscp)), by="Site")
+## Save dataset
 write.csv(Abundance, "Output/AbundanceClean.csv")
 
 
