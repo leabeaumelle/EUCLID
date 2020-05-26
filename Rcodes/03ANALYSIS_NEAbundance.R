@@ -50,6 +50,12 @@ plot(Abundance$Total ~ Abundance$Guild)
 par(mfrow=c(1,1))
 
 # Missing values
+table(Abundance$Guild, Abundance$Distance)
+# vegetation samplings at distances 15 and 30 m of flower strips: for ALL sites and treatments and sessions
+
+table(Abundance$Site, Abundance$session, Abundance$Guild)
+# vine samplings in session 1 for all treatments at site 10, and for high div treatment at site 9: for ALL distances
+# vegetation sampling at distance 0m at site 10 for both treatments, and at site 9 for high div treatment 
 
 
 ## Modelling-----------------------------------
