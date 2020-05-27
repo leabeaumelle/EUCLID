@@ -22,6 +22,8 @@ library(MuMIn)
 library(DHARMa)
 library(MASS)
 library(sjPlot)
+library(lattice)
+library(optimx)
 
 # from previous codes
 # library(lmerTest)
@@ -39,7 +41,7 @@ Ldscp$Ldscp <- Ldscp$HSN1000
 Abundance <- left_join(Abundance, Ldscp, by = "Site")
 Abundance$Site <- as.factor(Abundance$Site)
 
-## Descriptive stats and plot--------------------
+## Data exploration--------------------
 summary(Abundance$Total)
 
 hist(Abundance$Total)
@@ -69,10 +71,32 @@ pairs(Abundance[,c("Total", "Treatment", "Ldscp", "Guild", "Distance", "Site", "
 plot(Abundance$Total ~ Abundance$Ldscp)
 xyplot(Total ~ Ldscp |factor(Treatment)*factor(Guild)*factor(Distance), data = Abundance)
 
+# Random effect structure : measurements from the same session at the same site are not independent
+boxplot(Abundance$Total ~ factor(Abundance$Site), varwidth = TRUE)
+plot(Abundance$Total ~ factor(Abundance$session), varwidth = TRUE)
+xyplot(Total ~ factor(Site):factor(session), data = Abundance)
+
+
 ## Modelling-----------------------------------
+# full model
 mod1 <- glmer.nb(Total ~ Ldscp*Treatment*Guild + Treatment*Distance*Guild + 
                     (1|Site/session) ,
                   data=Abundance, control=glmerControl(optimizer="bobyqa"))
+
+# model complexity vs. sample size
+# k = 19: 16 (fixed) + 2 (random) + 1 (error term); n = 366
+logLik(mod1) # gives the df of the model (19)
+nrow(Abundance)
+# the ratio n/k should be between 3 and 10 (Harrison, 2018)
+366/19
+
+# Rescale and center continuous predictors: landscape and distance variables
+numcols <- grep("Ldscp|Dist",names(Abundance))
+Abs <- Abundance
+Abs[,numcols] <- scale(Abs[,numcols])
+mod1_sc <- update(mod1,data=Abs)
+
+## Check model assumptions------------------
 
 
 ## Run model---------------------------------------------------------------------------
