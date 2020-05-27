@@ -116,6 +116,28 @@ plotResiduals(Abundance$Treatment, res$scaledResiduals, main = "Treatment")
 plotResiduals(Abundance$Distance, res$scaledResiduals, main = "Distance")
 par(mfrow = c(1,1))
 
+## LRT test global model
+mod.null <-  glmer.nb(Total ~ 1 + (1|Site/session),
+                      data=Abs, control=glmerControl(optimizer="bobyqa"))
+
+anova(mod1_sc, mod.null)
+
+## Model selection------------------------
+drop1(mod1_sc, test = "Chisq")
+
+mod2_sc <- glmer.nb(Total ~ Ldscp*Treatment*Guild + Distance + 
+                      (1|Site/session) ,
+                    data=Abs, control=glmerControl(optimizer="bobyqa"))
+
+drop1(mod2_sc, test = "Chisq")
+
+mod3_sc <- glmer.nb(Total ~ Ldscp*Treatment+ Ldscp*Guild + Treatment*Guild + Distance + 
+                      (1|Site/session) ,
+                    data=Abs, control=glmerControl(optimizer="bobyqa"))
+
+# etc.
+
+
 ## Run model---------------------------------------------------------------------------
 # From Arthur
 # NEData <- read.csv("Output/NatEnemies_clean.csv")
