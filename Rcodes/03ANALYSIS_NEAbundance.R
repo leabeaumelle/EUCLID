@@ -98,6 +98,23 @@ mod1_sc <- update(mod1,data=Abs)
 
 ## Check model assumptions------------------
 
+## Inspect residuals
+## residuals vs. fitted
+plot(mod1_sc)
+
+# check residuals with Dharma
+res <- simulateResiduals(mod1_sc, plot = T)
+
+# Formal goodness of fit tests
+testResiduals(res)
+
+# residuals vs. predictors
+par(mfrow = c(2,2))
+plotResiduals(scale(Abundance$Ldscp), res$scaledResiduals, asFactor = FALSE, main = "Landscape")
+plotResiduals(Abundance$Guild, res$scaledResiduals, main = "Guild")
+plotResiduals(Abundance$Treatment, res$scaledResiduals, main = "Treatment")
+plotResiduals(Abundance$Distance, res$scaledResiduals, main = "Distance")
+par(mfrow = c(1,1))
 
 ## Run model---------------------------------------------------------------------------
 # From Arthur
