@@ -40,6 +40,7 @@ Ldscp$Ldscp <- Ldscp$HSN1000
 
 Abundance <- left_join(Abundance, Ldscp, by = "Site")
 Abundance$Site <- as.factor(Abundance$Site)
+Abundance$session <- as.factor(as.character(Abundance$session))
 
 ## Data exploration--------------------
 summary(Abundance$Total)
@@ -121,6 +122,12 @@ mod.null <-  glmer.nb(Total ~ 1 + (1|Site/session),
                       data=Abs, control=glmerControl(optimizer="bobyqa"))
 
 anova(mod1_sc, mod.null)
+
+# Save results of the full model
+tab_model(mod1_sc)
+
+saveRDS(mod1_sc, file = "Output/NEAbundance_FullModel.rds")
+
 
 ## Model selection------------------------
 drop1(mod1_sc, test = "Chisq")
