@@ -132,17 +132,99 @@ saveRDS(mod1_sc, file = "Output/NEAbundance_FullModel.rds")
 ## Model selection------------------------
 drop1(mod1_sc, test = "Chisq")
 
+# Three way interactions are not significant: dropping the Treatment:Guild:Distance first
 mod2_sc <- glmer.nb(Total ~ Ldscp*Treatment*Guild + Distance + 
                       (1|Site/session) ,
                     data=Abs, control=glmerControl(optimizer="bobyqa"))
+isSingular(mod2_sc) # warning: singular fit , but isSingular indicates none of the random effects covariance matrices are singular
 
 drop1(mod2_sc, test = "Chisq")
 
+# Three way interaction Ld:Treatment:Guild still not significant: dropping it
 mod3_sc <- glmer.nb(Total ~ Ldscp*Treatment+ Ldscp*Guild + Treatment*Guild + Distance + 
                       (1|Site/session) ,
                     data=Abs, control=glmerControl(optimizer="bobyqa"))
+isSingular(mod3_sc) # warning: singular fit , but isSingular indicates none of the random effects covariance matrices are singular
 
-# etc.
+drop1(mod3_sc, test = "Chisq")
+
+# least significant term is the landscape: treatment interaction
+mod4_sc <- glmer.nb(Total ~ Ldscp*Guild + Treatment*Guild + Distance + 
+                      (1|Site/session) ,
+                    data=Abs, control=glmerControl(optimizer="bobyqa"))
+isSingular(mod4_sc)
+
+summary(mod4_sc)
+
+drop1(mod4_sc, test = "Chisq")
+
+# guild:treatment ns
+mod5_sc <- glmer.nb(Total ~ Ldscp*Guild + Treatment + Distance + 
+                      (1|Site/session) ,
+                    data=Abs, control=glmerControl(optimizer="bobyqa"))
+isSingular(mod5_sc)
+
+summary(mod5_sc)
+
+drop1(mod5_sc, test = "Chisq")
+
+# ldscp:guild interaction ns
+mod6_sc <- glmer.nb(Total ~ Ldscp + Guild + Treatment + Distance + 
+                      (1|Site/session) ,
+                    data=Abs, control=glmerControl(optimizer="bobyqa"))
+isSingular(mod6_sc)
+
+summary(mod6_sc)
+
+drop1(mod6_sc, test = "Chisq")
+
+# ldscp ns
+mod7_sc <- glmer.nb(Total ~  Guild + Treatment + Distance + 
+                      (1|Site/session) ,
+                    data=Abs, control=glmerControl(optimizer="bobyqa"))
+isSingular(mod7_sc)
+
+summary(mod7_sc)
+
+drop1(mod7_sc, test = "Chisq")
+
+# distance ns
+mod8_sc <- glmer.nb(Total ~  Guild + Treatment +  
+                      (1|Site/session) ,
+                    data=Abs, control=glmerControl(optimizer="bobyqa"))
+isSingular(mod8_sc)
+
+summary(mod8_sc)
+
+drop1(mod8_sc, test = "Chisq")
+
+# no further variables to be dropped
+
+# Check model assumptions for the optimal model
+## Inspect residuals
+## residuals vs. fitted
+plot(mod8_sc)
+
+# check residuals with Dharma
+res <- simulateResiduals(mod8_sc, plot = T)
+
+# Formal goodness of fit tests
+testResiduals(res)
+
+# residuals vs. predictors
+par(mfrow = c(2,2))
+plotResiduals(scale(Abundance$Ldscp), res$scaledResiduals, asFactor = FALSE, main = "Landscape")
+plotResiduals(Abundance$Guild, res$scaledResiduals, main = "Guild")
+plotResiduals(Abundance$Treatment, res$scaledResiduals, main = "Treatment")
+plotResiduals(Abundance$Distance, res$scaledResiduals, main = "Distance")
+par(mfrow = c(1,1))
+
+
+# save model results
+tab_model(mod8_sc)
+# tab_model(mod8_sc, p.val = "kr") #more precise p-values but require model to be fitted with REML
+
+saveRDS(mod8_sc, file = "Output/NEAbundance_OptimalModel.rds")
 
 
 ## Run model---------------------------------------------------------------------------
