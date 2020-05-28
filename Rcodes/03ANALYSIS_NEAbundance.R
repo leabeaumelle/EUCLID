@@ -226,6 +226,9 @@ tab_model(mod8_sc)
 
 saveRDS(mod8_sc, file = "Output/NEAbundance_OptimalModel.rds")
 
+# get mean values predicted
+plot_model(mod8_sc, type = "pred")
+
 
 ## Run model---------------------------------------------------------------------------
 # From Arthur
