@@ -6,16 +6,54 @@
 library(dplyr)
 library(ggplot2)
 library(patchwork)
+library(viridis)
 
 ## Data----------------------------------------------------------------------------
-NEData <- read.csv("Output/NatEnemies_clean.csv")
-Preddata <- read.csv("Output/PredationPest_clean.csv")
+Abundance <- read.csv("Output/AbundanceClean.csv")
+# Preddata <- read.csv("Output/PredationPest_clean.csv")
 
 
 
 ## Figure 1 - overall effect of flower strips on natural enemies and predation
 # three panels with overall flower strip effect across landscapes and communitiy types
 
+# Panel A - Flower strips increase the abundance of natural enemies
+
+# reorder levels of treatment
+Abundance$Treatment <- relevel(Abundance$Treatment, ref = "Low Div")
+
+# set sizes of text in plots
+sizetext <- 10
+sizelegend <- 8
+
+F1A <- ggplot(data = Abundance, aes(y=Total, x=Treatment, fill = Treatment))+
+  geom_boxplot()+
+  geom_jitter(width = .25, alpha = .4, size = 0.4)+
+  scale_fill_viridis_d(begin = 0.5)+
+  # scale_fill_manual(values = c(pal[2], pal[3]))+
+  ylab("Natural enemies abundance")+
+  theme_bw()+
+  theme(legend.position = "none", 
+        axis.text.y=element_text(face = "bold", size = sizelegend),
+        axis.text.x=element_text(size = sizetext),
+        axis.title.y = element_text(size=sizetext, face = "bold"),
+        axis.title.x = element_blank())
+F1A
+
+
+# save a png with high res
+ppi <- 300# final: 600 # resolution
+w <- 20 # width in cm
+
+png("Figures/Fig1.png",
+    width=w/3,
+    height=w/3,
+    units = "cm",
+    res=ppi)
+
+F1A
+
+dev.off()
 
 ## Figure 2 - response of different guilds at different distances of flower strips
 # three to nine panels showing how response depends on community type and distance to strip
