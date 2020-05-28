@@ -230,8 +230,148 @@ saveRDS(mod8_sc, file = "Output/NEAbundance_OptimalModel.rds")
 plot_model(mod8_sc, type = "pred")
 
 
-## Run model---------------------------------------------------------------------------
-# From Arthur
+## Repeat the analysis removing vegetation data ------------------------------------------
+# these data confound the distance effect because
+# no vegetation sampling was carried out at distances 15 and 30m
+
+## Full model without vegetation data-----------
+data_novg <- Abs[which(Abs$Guild != "Vegetation"),]
+
+mod1_novg <- glmer.nb(Total ~ Ldscp*Treatment*Guild + Distance*Treatment*Guild + 
+                        (1|Site/session),
+                      data = data_novg,
+                      control=glmerControl(optimizer="bobyqa"))
+isSingular(mod1_novg)
+
+# Check model assumptions for the optimal model
+## Inspect residuals
+## residuals vs. fitted
+plot(mod1_novg)
+
+# check residuals with Dharma
+res <- simulateResiduals(mod1_novg, plot = T)
+
+# Formal goodness of fit tests
+testResiduals(res)
+
+# residuals vs. predictors
+par(mfrow = c(2,2))
+plotResiduals(data_novg$Ldscp, res$scaledResiduals, asFactor = FALSE, main = "Landscape")
+plotResiduals(data_novg$Guild, res$scaledResiduals, main = "Guild")
+plotResiduals(data_novg$Treatment, res$scaledResiduals, main = "Treatment")
+plotResiduals(data_novg$Distance, res$scaledResiduals, main = "Distance")
+par(mfrow = c(1,1))
+
+# signs of non-linear effect of landscape in the residuals
+
+# save model results
+tab_model(mod1_novg)
+# tab_model(mod1_novg, p.val = "kr") #more precise p-values but require model to be fitted with REML
+
+saveRDS(mod1_novg, file = "Output/NEAbundance_FullModel_novg.rds")
+
+
+## Model selection without vegetation dat------------------------
+drop1(mod1_novg, test = "Chisq")
+
+# Three way interactions are not significant: dropping the Treatment:Guild:Distance first [same as previous]
+mod2_novg <- glmer.nb(Total ~ Ldscp*Treatment*Guild + Distance + 
+                      (1|Site/session) ,
+                    data=data_novg, control=glmerControl(optimizer="bobyqa"))
+isSingular(mod2_novg) # warning: singular fit , but isSingular indicates none of the random effects covariance matrices are singular
+
+drop1(mod2_novg, test = "Chisq")
+
+# Three way interaction Ld:Treatment:Guild still not significant: dropping it [same as previous]
+mod3_novg <- glmer.nb(Total ~ Ldscp*Treatment+ Ldscp*Guild + Treatment*Guild + Distance + 
+                      (1|Site/session) ,
+                    data=data_novg, control=glmerControl(optimizer="bobyqa"))
+isSingular(mod3_novg) # warning: singular fit , but isSingular indicates none of the random effects covariance matrices are singular
+
+drop1(mod3_novg, test = "Chisq")
+
+# least significant term is the treatment:guild interaction [different than previous: dropped landscape:treatment]
+mod4_novg <- glmer.nb(Total ~ Ldscp*Treatment + Ldscp*Guild + Distance + 
+                      (1|Site/session) ,
+                    data=data_novg, control=glmerControl(optimizer="bobyqa"))
+isSingular(mod4_novg)
+
+summary(mod4_novg)
+
+drop1(mod4_novg, test = "Chisq")
+
+# least significant term is the landscape:treatment interaction [same as previous now]
+mod5_novg <- glmer.nb(Total ~ Ldscp*Guild + Treatment + Distance + 
+                      (1|Site/session) ,
+                    data=data_novg, control=glmerControl(optimizer="bobyqa"))
+isSingular(mod5_novg)
+
+summary(mod5_novg)
+
+drop1(mod5_novg, test = "Chisq")
+
+# ldscp:guild interaction ns [same as previous]
+mod6_novg <- glmer.nb(Total ~ Ldscp + Guild + Treatment + Distance + 
+                      (1|Site/session) ,
+                    data=data_novg, control=glmerControl(optimizer="bobyqa"))
+isSingular(mod6_novg)
+
+summary(mod6_novg)
+
+drop1(mod6_novg, test = "Chisq")
+
+# ldscp ns [same as previous]
+mod7_novg <- glmer.nb(Total ~  Guild + Treatment + Distance + 
+                      (1|Site/session) ,
+                    data=data_novg, control=glmerControl(optimizer="bobyqa"))
+isSingular(mod7_novg)
+
+summary(mod7_novg)
+
+drop1(mod7_novg, test = "Chisq")
+
+# distance ns
+mod8_novg <- glmer.nb(Total ~  Guild + Treatment +  
+                      (1|Site/session) ,
+                    data=data_novg, control=glmerControl(optimizer="bobyqa"))
+isSingular(mod8_novg)
+
+summary(mod8_novg)
+
+drop1(mod8_novg, test = "Chisq")
+
+# no further variables to be dropped
+
+# Check model assumptions for the optimal model
+## Inspect residuals
+## residuals vs. fitted
+plot(mod8_novg)
+
+# check residuals with Dharma
+res <- simulateResiduals(mod8_novg, plot = T)
+
+# Formal goodness of fit tests
+testResiduals(res)
+
+# residuals vs. predictors
+par(mfrow = c(2,2))
+plotResiduals(scale(data_novg$Ldscp), res$scaledResiduals, asFactor = FALSE, main = "Landscape")
+plotResiduals(data_novg$Guild, res$scaledResiduals, main = "Guild")
+plotResiduals(data_novg$Treatment, res$scaledResiduals, main = "Treatment")
+plotResiduals(data_novg$Distance, res$scaledResiduals, main = "Distance")
+par(mfrow = c(1,1))
+
+
+# save model results
+tab_model(mod8_novg)
+# tab_model(mod8_novg, p.val = "kr") #more precise p-values but require model to be fitted with REML
+
+saveRDS(mod8_novg, file = "Output/NEAbundance_OptimalModel_novg.rds")
+
+# get mean values predicted
+plot_model(mod8_novg, type = "pred")
+
+# From Arthur-----------------------------------------------------------------------------
 # NEData <- read.csv("Output/NatEnemies_clean.csv")
 
 totEN <- glmer.nb(Y ~ Landscp*Treatment*Community + Treatment*Distc*Community + 
@@ -249,10 +389,5 @@ modavg_totEN<-model.avg(topmod_set_totEN) ; modavg_totEN
 summary(modavg_totEN) ; confint(modavg_totEN)
 r.squaredGLMM(topmod_set_totEN$'4')
 # Significativement moins d'Ennemis naturels a 20m.
-
-## Check assumptions ---------------------------------------------------------------------
-
-
-## Store model results as output ---------------------------------------------------------
 
 
