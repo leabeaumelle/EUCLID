@@ -371,6 +371,34 @@ saveRDS(mod8_novg, file = "Output/NEAbundance_OptimalModel_novg.rds")
 # get mean values predicted
 plot_model(mod8_novg, type = "pred")
 
+
+
+## Explore Non linear trend with landscape------------------------------------------------
+library(gamm4)
+
+K <- length(unique(Abs$Ldscp)) - 1
+
+# ignoring dependence structure
+mod1_nl <- gam(Total ~ s(Ldscp, k = K),
+               family = nb,
+               # (1|Site/session) ,
+               data=Abs)
+
+anova(mod1_nl)
+summary(mod1_nl)
+plot(mod1_nl)
+
+# with dependence structure
+mod2_nl <- gamm4(Total ~ s(Ldscp, k = 7) + Treatment:Guild,
+               family = negative.binomial(1),
+               data=Abs,
+               random =~ (1|Site/session))
+
+summary(mod2_nl$gam, cor = FALSE)
+anova(mod2_nl$gam)
+plot(mod2_nl$gam)
+
+
 # From Arthur-----------------------------------------------------------------------------
 # NEData <- read.csv("Output/NatEnemies_clean.csv")
 
