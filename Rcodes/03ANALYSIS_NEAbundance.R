@@ -374,30 +374,103 @@ plot_model(mod8_novg, type = "pred")
 
 
 ## Explore Non linear trend with landscape------------------------------------------------
-library(gamm4)
 
-K <- length(unique(Abs$Ldscp)) - 1
+# adding a polynomial term for landscape
+mod1_nl <- glmer.nb(Total ~ poly(Ldscp, 2)*Treatment*Guild + Treatment*Distance*Guild + 
+                   (1|Site/session) ,
+                 data=Abs, control=glmerControl(optimizer="bobyqa"))
 
-# ignoring dependence structure
-mod1_nl <- gam(Total ~ s(Ldscp, k = K),
-               family = nb,
-               # (1|Site/session) ,
-               data=Abs)
+# LRT test of quadratic term: highly significant
+anova(mod1_nl, mod1_sc)
 
-anova(mod1_nl)
-summary(mod1_nl)
+# # Check model assumptions: not great
+## Inspect residuals
+## residuals vs. fitted
 plot(mod1_nl)
 
-# with dependence structure
-mod2_nl <- gamm4(Total ~ s(Ldscp, k = 7) + Treatment:Guild,
-               family = negative.binomial(1),
-               data=Abs,
-               random =~ (1|Site/session))
+# check residuals with Dharma
+res <- simulateResiduals(mod1_nl, plot = T)
 
-summary(mod2_nl$gam, cor = FALSE)
-anova(mod2_nl$gam)
-plot(mod2_nl$gam)
+# Formal goodness of fit tests
+testResiduals(res)
 
+# residuals vs. predictors
+par(mfrow = c(2,2))
+plotResiduals(Abs$Ldscp, res$scaledResiduals, asFactor = FALSE, main = "Landscape")
+plotResiduals(Abs$Guild, res$scaledResiduals, main = "Guild")
+plotResiduals(Abs$Treatment, res$scaledResiduals, main = "Treatment")
+plotResiduals(Abs$Distance, res$scaledResiduals, main = "Distance")
+par(mfrow = c(1,1))
+
+## Model selection
+
+drop1(mod1_nl, test = "Chisq")
+
+#both three way interactions are ns : dropping treatment:guild:distance[same as before]
+mod2_nl <- glmer.nb(Total ~ poly(Ldscp,2)*Treatment*Guild + Distance + 
+                      (1|Site/session) ,
+                    data=Abs, control=glmerControl(optimizer="bobyqa"))
+isSingular(mod2_nl) # warning: singular fit , but isSingular indicates none of the random effects covariance matrices are singular
+
+drop1(mod2_nl, test = "Chisq")
+
+# Three way interaction Ld:Treatment:Guild still not significant: dropping it [same as before]
+mod3_nl <- glmer.nb(Total ~ poly(Ldscp,2)*Treatment+ poly(Ldscp,2)*Guild + Treatment*Guild + Distance + 
+                      (1|Site/session) ,
+                    data=Abs, control=glmerControl(optimizer="bobyqa"))
+isSingular(mod3_nl) # warning: singular fit , but isSingular indicates none of the random effects covariance matrices are singular
+
+drop1(mod3_nl, test = "Chisq")
+
+# least significant term is the Treatment:Guild interaction [different than before]
+mod4_nl <- glmer.nb(Total ~ poly(Ldscp,2)*Treatment+ poly(Ldscp,2)*Guild + Distance + 
+                      (1|Site/session) ,
+                    data=Abs, control=glmerControl(optimizer="bobyqa"))
+isSingular(mod4_nl)
+
+drop1(mod4_nl, test = "Chisq")
+
+# landscape:treatment effect is not significant (p=0.08) [different than before, but same as previous step]
+mod5_nl <- glmer.nb(Total ~ poly(Ldscp,2)*Guild + Treatment + Distance + 
+                      (1|Site/session) ,
+                    data=Abs, control=glmerControl(optimizer="bobyqa"))
+isSingular(mod5_nl)
+
+summary(mod5_nl)
+
+drop1(mod5_nl, test = "Chisq")
+
+# no further variables to be dropped (although we are checking on the boundary and p = 0.03 for distance)
+
+## Checking otimal model assumptions
+## Inspect residuals
+## residuals vs. fitted
+plot(mod5_nl)
+
+# check residuals with Dharma
+res <- simulateResiduals(mod5_nl, plot = T)
+
+# Formal goodness of fit tests
+testResiduals(res)
+
+# residuals vs. predictors
+par(mfrow = c(2,2))
+plotResiduals(scale(Abundance$Ldscp), res$scaledResiduals, asFactor = FALSE, main = "Landscape")
+plotResiduals(Abundance$Guild, res$scaledResiduals, main = "Guild")
+plotResiduals(Abundance$Treatment, res$scaledResiduals, main = "Treatment")
+plotResiduals(Abundance$Distance, res$scaledResiduals, main = "Distance")
+par(mfrow = c(1,1))
+
+
+## Results
+tab_model(mod5_nl)
+anova(mod5_nl)
+
+
+# different resposne to landscape depending on guild
+plot_model(mod5_nl, type = "pred", terms = c("Ldscp", "Guild"))
+plot_model(mod5_nl, type = "pred", terms = c("Distance", "Guild"))
+plot_model(mod5_nl, type = "pred", terms = c("Treatment", "Guild"))
 
 # From Arthur-----------------------------------------------------------------------------
 # NEData <- read.csv("Output/NatEnemies_clean.csv")
