@@ -472,6 +472,9 @@ plot_model(mod5_nl, type = "pred", terms = c("Ldscp", "Guild"))
 plot_model(mod5_nl, type = "pred", terms = c("Distance", "Guild"))
 plot_model(mod5_nl, type = "pred", terms = c("Treatment", "Guild"))
 
+
+
+
 # From Arthur-----------------------------------------------------------------------------
 # NEData <- read.csv("Output/NatEnemies_clean.csv")
 
