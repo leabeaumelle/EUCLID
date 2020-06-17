@@ -24,6 +24,7 @@ NE$Distance <- ifelse(NE$mod == "00m", 0,
                              30))
 NE$Site <- factor(NE$couple)
 
+
 ## Add landscape--------------------------------
 Ldscp <- read.csv("Output/LandscapeVars.csv") # proportion of SNH in landscape
 NE_lddf <- left_join(NE, Ldscp, by = "couple")
@@ -77,38 +78,187 @@ nrow(expand_grid(Site = c(1:12),
 write.csv(Abundance, "Output/AbundanceClean.csv")
 
 
-## 2. Calculate rarefied richness-----------
+## 2. Calculate richness-----------
+NE$session <- as.factor(NE$session)
+# variables identifying the sample ID (to be used in dplyr:group_by)
+WhichSampleID <- c("Site", "Treatment", "Guild", "Distance", "session")
 
-# 2.1. Make a species matrix-------------------
-# sum number of individuals per taxa
-SpeciesList <- NE %>% group_by(Site, Treatment, Guild, Distance, session, taxon) %>% 
+# 2.1. Quantify data availability at different taxonomic resolution---------
+# Makes table with the total number of individuals and those identified at each taxo resolution
+TaxoReso <- c(
+  TotalInd <-  sum(NE$eff),
+  IndSpecies <-  sum(NE$eff[NE$Rspec=="x"]),
+  IndGenus <-  sum(NE$eff[NE$Rgen=="x"&NE$Rspec==""]),
+  IndFamily <-  sum(NE$eff[NE$Rgen=="" & NE$family != ""]),
+  IndOrder <-  TotalInd - (IndSpecies+IndGenus+IndFamily))
+TaxoReso
+
+# Proportion of individuals id to the species vs genus level
+TaxoReso[2]/TaxoReso[1] # 42% at species
+(TaxoReso[2]+TaxoReso[3])/TaxoReso[1] # 77% at genus
+
+## Taxonomic resolution available across all samples
+TaxoResoPerSample <- NE %>% group_by_at(WhichSampleID) %>% 
+  summarize(TotalInd = sum(eff),
+            IndSpecies = sum(eff[Rspec=="x"]),
+            IndGenus = sum(eff[Rgen=="x"]),
+            PropInfoLostSpecies = (TotalInd - IndSpecies)/TotalInd,
+            PropInfoLostGenus = (TotalInd - IndGenus)/TotalInd)
+
+# 49 samples have no information at the species level
+nrow(TaxoResoPerSample[TaxoResoPerSample$IndSpecies==0 & 
+                         TaxoResoPerSample$TotalInd != 0,])
+# 8 samples have no information at the genus level either
+nrow(TaxoResoPerSample[TaxoResoPerSample$IndGenus==0 &
+                         TaxoResoPerSample$TotalInd != 0,])
+# But among those 8 samples, most have 1 or 2 individuals only
+# which means, we can easily infer how many taxa are present: 
+# 1 individual = 1 species; 2 individuals = 2 species if they belong to different families
+TaxoResoPerSample$TotalInd[TaxoResoPerSample$IndGenus==0 & 
+                    TaxoResoPerSample$IndSpecies == 0 &
+                    TaxoResoPerSample$TotalInd != 0]
+
+# How representative of each sample would taxonomic richness calculation be?
+# On average, percentage of un-id individuals per sample
+summary(TaxoResoPerSample$PropInfoLostSpecies)# on average our species richness estimates would miss 60% of individuals
+hist(TaxoResoPerSample$PropInfoLostSpecies) # for most samples, we would miss 80% of individuals
+
+# versus for genus richness, around 20% of individuals per sample are lost
+summary(TaxoResoPerSample$PropInfoLostGenus)
+hist(TaxoResoPerSample$PropInfoLostGenus)# and most samples miss less than 30% of individuals
+
+## Data table NE contains information about families that are not represented in each sample
+# i.e. 958 rows at the family level have counts = 0 (variable NE$eff)
+length(NE$eff[NE$eff=="0"])
+
+
+# 2.2. Compare richness based on different taxonomic scale------
+
+## Taxonomic richness (across taxonomic resolutions) ----------------
+# sum number of individuals per taxa (species, genus, family, order confounded)
+TaxaList <- NE %>% group_by(Site, Treatment, Guild, Distance, session, taxon) %>% 
+  summarize(total = sum(eff, na.rm = TRUE)) %>% ungroup()
+
+# make wide table to calculate richness
+TaxaList_wide <- as.data.frame(spread(TaxaList, taxon, total, fill = 0))
+
+# remove categorical variables
+JustTaxa <- subset(TaxaList_wide, 
+                      select = -c(Site, Treatment, Guild, Distance, session))
+
+TaxaList_wide$TR <- specnumber(JustTaxa)
+summary(TaxaList_wide$TR) # between 0 and 20 taxa per sample (including various taxo scales)
+
+
+## Species richness -------------
+##Remove data for individuals that were not id to the species level
+SpeciesList <- NE %>% 
+  filter(Rspec =="x") %>% 
+  group_by(Site, Treatment, Guild, Distance, session, taxon) %>% 
   summarize(total = sum(eff, na.rm = TRUE)) %>% ungroup()
 
 # make wide table to calculate richness
 SpeciesList_wide <- as.data.frame(spread(SpeciesList, taxon, total, fill = 0))
 
-# create table of natural enemies counts per sample
+# remove categorical vars
 JustSpecies <- subset(SpeciesList_wide, 
+                       select = -c(Site, Treatment, Guild, Distance, session))
+# richness calculation
+SpeciesList_wide$SR <- specnumber(JustSpecies)
+
+
+## Genus richness ------------------
+# Only those individuals that were id to the genus
+GenusList <- NE %>% 
+  filter(Rgen == "x") %>% 
+  group_by(Site, Treatment, Guild, Distance, session, Rgen_taxon) %>% 
+  summarize(total = sum(eff, na.rm = TRUE)) %>% ungroup()
+
+# Make wide table to calculate genus richness
+GenusList_wide <- as.data.frame(spread(GenusList, Rgen_taxon, total, fill = 0))
+
+# remove categorical vars
+JustGenus <- subset(GenusList_wide, 
                       select = -c(Site, Treatment, Guild, Distance, session))
+# richness calculation
+GenusList_wide$GR <- specnumber(JustGenus)
 
-# create table to store final diversity values
-Diversity <- subset(SpeciesList_wide, 
-                    select = c(Site, Treatment, Guild, Distance, session))
+## Make a diversity table with different richness estimates-----
 
-# richness
-Diversity$S <- specnumber(JustSpecies)
+# Create diversity dataframe, and adds taxonomic richness
+DivDf <- subset(TaxaList_wide, 
+                select = c(Site, Treatment, Guild, Distance, session, TR))
 
-# TO DO : raremax is zero, how to deal with this?
-# rarefied richness
-(raremax <- min(rowSums(JustSpecies)))
-SPeciesList_wide$Srar <- rarefy(JustSpecies, raremax)
+# add species richness when possible
+SpDf <- subset(SpeciesList_wide, 
+               select = c(Site, Treatment, Guild, Distance, session, SR))
 
-## 3. Add explanatory variables and remove unnecessary columns----------------------
+DivDf <- left_join(DivDf, SpDf, by = WhichSampleID)
+
+## add genus richness when possible
+GnDf <- subset(GenusList_wide, 
+               select = c(Site, Treatment, Guild, Distance, session, GR))
+
+DivDf <- left_join(DivDf, GnDf, by = WhichSampleID)
+
+## add abundance data
+Diversity <- left_join(DivDf, Abundance, by = WhichSampleID)
+head(Diversity)
+summary(Diversity) # many NAs
+
+## When abundance was 0 and 1, richness should be 0 and 1 too
+Div_clean <- Diversity
+Div_clean$SR[Div_clean$Total <= 1] <-  Div_clean$GR[Div_clean$Total <= 1] <- 
+  Div_clean$TR[Div_clean$Total <= 1]
+  
+summary(Div_clean) # less NAs
+
+## What about remaining NAs for genus richness? can we make educated guess about how many genus?
+Div_clean[is.na(Div_clean$GR),]
+# look at the raw data for those NAs,
+left_join(Div_clean[is.na(Div_clean$GR),], NE, by = WhichSampleID) %>% filter(eff != 0)
+
+# At Site 1, 2 individuals, belonging to different families: GR = TR = 2
+Div_clean$GR[is.na(Div_clean$GR) & Div_clean$Site==1] <- Div_clean$TR[is.na(Div_clean$GR) & Div_clean$Site==1]
+
+# At Site 6, there were 3 individuals, belonging to 2 distinct families
+# At Site 11, there were 4 individuals, belong to 2 distinct families as well
+## for those, we could assume at least 2 species are present, but then we would be
+# treating data differently (special case for the NAs versus the rest of the data)
+
+## Compare richness estimates----
+# Accumulation curves
+par(mfrow=c(1,3))
+plot(Div_clean$Total, Div_clean$TR, main = "taxonomic")
+plot(Div_clean$Total, Div_clean$GR, main = "genus")
+plot(Div_clean$Total, Div_clean$SR, main = "species")
+par(mfrow=c(1,1))
+# Genus richness vs. other richness
+par(mfrow=c(1,2))
+plot(Div_clean$TR, Div_clean$GR, main = "genus vs. taxonomic")
+abline(0,1)
+plot(Div_clean$SR, Div_clean$GR, main = "genus vs. species")
+abline(0,1)
+par(mfrow=c(1,1))
+
+
+# 2.3. Rarefy richness based on total abundance------------
+# rarefied richness: some samples have zero abundances= not possible to rarefy
+(raremaxT <- min(rowSums(JustTaxa)))
+(raremaxS <- min(rowSums(JustSpecies)))
+(raremaxG <- min(rowSums(JustGenus)))
+
+
+# 2.4. Store richness data table------------------
+## Rename cols
+Div_final <- subset(Div_clean, select = -c(SR, Total)) %>% 
+  rename(TaxaR = TR, GenusR = GR)
+
+## Save dataset
+write.csv(Div_final, "Output/DiversityClean.csv")
 
 
 
-## Save cleaned data----------------------
-write.csv(NE, "Output/NatEnemiesDiv_clean.csv")
 
 # 2. Predation of Lobesia eggs-------------------------------------------------------
 
