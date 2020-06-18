@@ -302,3 +302,46 @@ drop1(modsel8)
 
 # no further model simplification
 
+## Model validation ------------------------------------------------
+
+# Check model assumptions for the optimal model
+## Inspect residuals
+## residuals vs. fitted
+modfin_lme4 <- lme4::lmer(log10(GenusR + 1) ~ poly(Ldscp, 2) + Guild + poly(Ldscp, 2):Guild  + (1 | Site/session),
+             REML = TRUE,
+             data = Div, 
+             control=lmerControl(optimizer="bobyqa"))
+modfin_lmerT <- lmer(log10(GenusR + 1) ~ poly(Ldscp, 2) + Guild + poly(Ldscp, 2):Guild  + (1 | Site/session),
+                          REML = TRUE,
+                          data = Div, 
+                          control=lmerControl(optimizer="bobyqa"))
+
+plot(modfin_lme4)
+
+# check residuals with Dharma
+res <- simulateResiduals(modfin_lme4, plot = T)
+
+# Formal goodness of fit tests
+testResiduals(res)
+
+# residuals vs. predictors
+par(mfrow = c(2,2))
+plotResiduals(res, scale(Diversity$Ldscp[!is.na(Diversity$GenusR)]), asFactor = FALSE, main = "Landscape")
+plotResiduals(res, Diversity$Guild[!is.na(Diversity$GenusR)], main = "Guild")
+plotResiduals(res, Diversity$Treatment[!is.na(Diversity$GenusR)], main = "Treatment")
+plotResiduals(res, Diversity$Distance[!is.na(Diversity$GenusR)],  main = "Distance")
+par(mfrow = c(1,1))
+
+
+# save model results
+tab_model(modfin_lme4)
+# tab_model(mod8_sc, p.val = "kr") #more precise p-values but require model to be fitted with REML
+
+saveRDS(modfin_lme4, file = "Output/NEDiversity_OptimalModel.rds")
+
+# get mean values predicted
+plot_model(modfin_lme4, type = "pred")
+
+# Plot showing Landscape:Guild effect on log10(richness)
+plot_model(modfin_lme4, type = "pred", terms = c("Ldscp [all]", "Guild"))
+
