@@ -111,10 +111,10 @@ testResiduals(res)
 
 # residuals vs. predictors
 par(mfrow = c(2,2))
-plotResiduals(scale(Abundance$Ldscp), res$scaledResiduals, asFactor = FALSE, main = "Landscape")
-plotResiduals(Abundance$Guild, res$scaledResiduals, main = "Guild")
-plotResiduals(Abundance$Treatment, res$scaledResiduals, main = "Treatment")
-plotResiduals(Abundance$Distance, res$scaledResiduals, main = "Distance")
+plotResiduals(res, scale(Abundance$Ldscp), asFactor = FALSE, main = "Landscape")
+plotResiduals(res, Abundance$Guild, main = "Guild")
+plotResiduals(res, Abundance$Treatment, main = "Treatment")
+plotResiduals(res, Abundance$Distance,  main = "Distance")
 par(mfrow = c(1,1))
 
 ## LRT test global model
@@ -213,10 +213,10 @@ testResiduals(res)
 
 # residuals vs. predictors
 par(mfrow = c(2,2))
-plotResiduals(scale(Abundance$Ldscp), res$scaledResiduals, asFactor = FALSE, main = "Landscape")
-plotResiduals(Abundance$Guild, res$scaledResiduals, main = "Guild")
-plotResiduals(Abundance$Treatment, res$scaledResiduals, main = "Treatment")
-plotResiduals(Abundance$Distance, res$scaledResiduals, main = "Distance")
+plotResiduals(res$scaledResiduals, scale(Abundance$Ldscp), asFactor = FALSE, main = "Landscape")
+plotResiduals(res$scaledResiduals, Abundance$Guild, main = "Guild")
+plotResiduals(res$scaledResiduals, Abundance$Treatment, main = "Treatment")
+plotResiduals(res$scaledResiduals, Abundance$Distance,  main = "Distance")
 par(mfrow = c(1,1))
 
 
@@ -256,10 +256,10 @@ testResiduals(res)
 
 # residuals vs. predictors
 par(mfrow = c(2,2))
-plotResiduals(data_novg$Ldscp, res$scaledResiduals, asFactor = FALSE, main = "Landscape")
-plotResiduals(data_novg$Guild, res$scaledResiduals, main = "Guild")
-plotResiduals(data_novg$Treatment, res$scaledResiduals, main = "Treatment")
-plotResiduals(data_novg$Distance, res$scaledResiduals, main = "Distance")
+plotResiduals(res$scaledResiduals, data_novg$Ldscp, asFactor = FALSE, main = "Landscape")
+plotResiduals(res$scaledResiduals, data_novg$Guild,  main = "Guild")
+plotResiduals(res$scaledResiduals, data_novg$Treatment,  main = "Treatment")
+plotResiduals(res$scaledResiduals, data_novg$Distance,  main = "Distance")
 par(mfrow = c(1,1))
 
 # signs of non-linear effect of landscape in the residuals
@@ -355,10 +355,10 @@ testResiduals(res)
 
 # residuals vs. predictors
 par(mfrow = c(2,2))
-plotResiduals(scale(data_novg$Ldscp), res$scaledResiduals, asFactor = FALSE, main = "Landscape")
-plotResiduals(data_novg$Guild, res$scaledResiduals, main = "Guild")
-plotResiduals(data_novg$Treatment, res$scaledResiduals, main = "Treatment")
-plotResiduals(data_novg$Distance, res$scaledResiduals, main = "Distance")
+plotResiduals(res$scaledResiduals, scale(data_novg$Ldscp), asFactor = FALSE, main = "Landscape")
+plotResiduals(res$scaledResiduals, data_novg$Guild, main = "Guild")
+plotResiduals(res$scaledResiduals, data_novg$Treatment,  main = "Treatment")
+plotResiduals(res$scaledResiduals, data_novg$Distance,  main = "Distance")
 par(mfrow = c(1,1))
 
 
@@ -396,10 +396,10 @@ testResiduals(res)
 
 # residuals vs. predictors
 par(mfrow = c(2,2))
-plotResiduals(Abs$Ldscp, res$scaledResiduals, asFactor = FALSE, main = "Landscape")
-plotResiduals(Abs$Guild, res$scaledResiduals, main = "Guild")
-plotResiduals(Abs$Treatment, res$scaledResiduals, main = "Treatment")
-plotResiduals(Abs$Distance, res$scaledResiduals, main = "Distance")
+plotResiduals(res$scaledResiduals, Abs$Ldscp,  asFactor = FALSE, main = "Landscape")
+plotResiduals(res$scaledResiduals, Abs$Guild,  main = "Guild")
+plotResiduals(res$scaledResiduals, Abs$Treatment,  main = "Treatment")
+plotResiduals(res$scaledResiduals, Abs$Distance,  main = "Distance")
 par(mfrow = c(1,1))
 
 ## Model selection
@@ -455,10 +455,10 @@ testResiduals(res)
 
 # residuals vs. predictors
 par(mfrow = c(2,2))
-plotResiduals(scale(Abundance$Ldscp), res$scaledResiduals, asFactor = FALSE, main = "Landscape")
-plotResiduals(Abundance$Guild, res$scaledResiduals, main = "Guild")
-plotResiduals(Abundance$Treatment, res$scaledResiduals, main = "Treatment")
-plotResiduals(Abundance$Distance, res$scaledResiduals, main = "Distance")
+plotResiduals(res$scaledResiduals, scale(Abundance$Ldscp),  asFactor = FALSE, main = "Landscape")
+plotResiduals(res$scaledResiduals, Abundance$Guild, main = "Guild")
+plotResiduals(res$scaledResiduals, Abundance$Treatment, main = "Treatment")
+plotResiduals(res$scaledResiduals, Abundance$Distance,  main = "Distance")
 par(mfrow = c(1,1))
 
 

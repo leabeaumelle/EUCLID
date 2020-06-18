@@ -52,7 +52,7 @@ hist(Diversity$GenusR, main = "Genus richness")
 hist(Diversity$TaxaR, main = "Taxa richness")
 
 
-par(mfrow=c(4,2))
+par(mfrow=c(4,2), mar = c(4,4,2,2))
 plot(Diversity$GenusR ~ Diversity$Site, varwidth = TRUE, main = "Genus")
 plot(Diversity$TaxaR ~ Diversity$Site, varwidth = TRUE, main = "Taxonomic")
 plot(Diversity$GenusR ~ Diversity$Treatment, varwidth = TRUE)
@@ -129,21 +129,20 @@ testResiduals(res)
 
 # residuals vs. predictors : no strong sign of var heterogeneity
 op <- par(mfrow = c(2, 2), mar = c(4, 4, 2, 2))
-plotResiduals(scale(Diversity$Ldscp[!is.na(Diversity$GenusR)]), res$scaledResiduals, asFactor = FALSE, main = "Landscape")
-plotResiduals(Diversity$Guild[!is.na(Diversity$GenusR)], res$scaledResiduals, main = "Guild")
-plotResiduals(Diversity$Treatment[!is.na(Diversity$GenusR)], res$scaledResiduals, main = "Treatment")
-plotResiduals(Diversity$Distance[!is.na(Diversity$GenusR)], res$scaledResiduals, main = "Distance")
+plotResiduals(res, scale(Diversity$Ldscp[!is.na(Diversity$GenusR)]), asFactor = FALSE, main = "Landscape")
+plotResiduals(res, Diversity$Guild[!is.na(Diversity$GenusR)], main = "Guild")
+plotResiduals(res, Diversity$Treatment[!is.na(Diversity$GenusR)], main = "Treatment")
+plotResiduals(res, Diversity$Distance[!is.na(Diversity$GenusR)],  main = "Distance")
 par(op)
 
 # residuals vs. random factors : plots suggest variance heterogeneity for the different sites
 op2 <- par(mfrow=c(1,2), mar = c(4,4,2,2))
-plotResiduals(Diversity$Site[!is.na(Diversity$GenusR)], res$scaledResiduals)
-plotResiduals(Diversity$session[!is.na(Diversity$GenusR)], res$scaledResiduals)
+plotResiduals(res, Diversity$Site[!is.na(Diversity$GenusR)])
+plotResiduals(res, Diversity$session[!is.na(Diversity$GenusR)])
 par(op2)
 
 # plot suggesting non-normality (blue line not so close to the red line)
 plot_model(mod1_sc, type = "slope")
-
 
 ## Full model 2: add non-linear pattern with landscape
 mod2 <- lmer(GenusR ~ poly(Ldscp, 2)*Treatment*Guild + Treatment*Distance*Guild + 
@@ -170,21 +169,21 @@ plot(mod2_sc)
 res2 <- simulateResiduals(mod2_sc, plot = T)
 
 # Formal goodness of fit tests
-testResiduals(res)
+testResiduals(res2)
 
 # residuals vs. predictors
 par(mfrow = c(2,2))
-plotResiduals(scale(Diversity$Ldscp[!is.na(Diversity$GenusR)]), res2$scaledResiduals, asFactor = FALSE, main = "Landscape")
-plotResiduals(Diversity$Guild[!is.na(Diversity$GenusR)], res2$scaledResiduals, main = "Guild")
-plotResiduals(Diversity$Treatment[!is.na(Diversity$GenusR)], res2$scaledResiduals, main = "Treatment")
-plotResiduals(Diversity$Distance[!is.na(Diversity$GenusR)], res2$scaledResiduals, main = "Distance")
+plotResiduals(res2, scale(Diversity$Ldscp[!is.na(Diversity$GenusR)]), asFactor = FALSE, main = "Landscape")
+plotResiduals(res2, Diversity$Guild[!is.na(Diversity$GenusR)], main = "Guild")
+plotResiduals(res2, Diversity$Treatment[!is.na(Diversity$GenusR)], main = "Treatment")
+plotResiduals(res2, Diversity$Distance[!is.na(Diversity$GenusR)], main = "Distance")
 par(mfrow = c(1,1))
 
 # residuals vs. random factors : plots suggest variance heterogeneity for the different sites
 op3 <- par(mfrow=c(1,3), mar = c(4,4,2,2))
-plotResiduals(Diversity$Site[!is.na(Diversity$GenusR)], res2$scaledResiduals)
-plotResiduals(Diversity$session[!is.na(Diversity$GenusR)], res2$scaledResiduals)
-plotResiduals(Diversity$session[!is.na(Diversity$GenusR)]:Diversity$Site[!is.na(Diversity$GenusR)], res2$scaledResiduals)
+plotResiduals(res2, Diversity$Site[!is.na(Diversity$GenusR)])
+plotResiduals(res2, Diversity$session[!is.na(Diversity$GenusR)])
+plotResiduals(res2, Diversity$session[!is.na(Diversity$GenusR)]:Diversity$Site[!is.na(Diversity$GenusR)])
 par(op3)
 
 ## Full model 3 : variance heterogeneity
