@@ -25,6 +25,7 @@ library(MASS)
 library(sjPlot)
 library(lattice)
 library(optimx)
+library(lmerTest)
 
 # from previous codes
 # library(lmerTest)
@@ -97,17 +98,17 @@ xyplot(GenusR ~ factor(Site):factor(session), data = Diversity)
 
 
 ## Modelling-----------------------------------
-# full model
+## Full model 1 -----
 mod1 <- lmer(GenusR ~ Ldscp*Treatment*Guild + Treatment*Distance*Guild + 
                    (1|Site/session) ,
                  data=Diversity, control=lmerControl(optimizer="bobyqa"))
 
 # model complexity vs. sample size
-# k = 19: 16 (fixed) + 2 (random) + 1 (error term); n = 366
+# k = 19: 16 (fixed) + 2 (random) + 1 (error term); n = 364
 logLik(mod1) # gives the df of the model (19)
 nrow(Diversity[!is.na(Diversity$GenusR),])
 # the ratio n/k should be between 3 and 10 (Harrison, 2018)
-364/19
+logLik(mod1)/nrow(Diversity[!is.na(Diversity$GenusR),])
 
 # Rescale and center continuous predictors: landscape and distance variables
 numcols <- grep("Ldscp|Dist",names(Diversity))
@@ -115,36 +116,34 @@ Div <- Diversity
 Div[,numcols] <- scale(Div[,numcols])
 mod1_sc <- update(mod1,data=Div)
 
-## Check model assumptions------------------
-
-## Inspect residuals
+## Inspect residuals-----
 ## residuals vs. fitted
 plot(mod1_sc)
 
 # check residuals with Dharma
-res <- simulateResiduals(mod1_sc, plot = T)
+res1 <- simulateResiduals(mod1_sc, plot = T)
 
 # Formal goodness of fit tests
-testResiduals(res)
+testResiduals(res1)
 
 # residuals vs. predictors : no strong sign of var heterogeneity
 op <- par(mfrow = c(2, 2), mar = c(4, 4, 2, 2))
-plotResiduals(res, scale(Diversity$Ldscp[!is.na(Diversity$GenusR)]), asFactor = FALSE, main = "Landscape")
-plotResiduals(res, Diversity$Guild[!is.na(Diversity$GenusR)], main = "Guild")
-plotResiduals(res, Diversity$Treatment[!is.na(Diversity$GenusR)], main = "Treatment")
-plotResiduals(res, Diversity$Distance[!is.na(Diversity$GenusR)],  main = "Distance")
+plotResiduals(res1, scale(Diversity$Ldscp[!is.na(Diversity$GenusR)]), asFactor = FALSE, main = "Landscape")
+plotResiduals(res1, Diversity$Guild[!is.na(Diversity$GenusR)], main = "Guild")
+plotResiduals(res1, Diversity$Treatment[!is.na(Diversity$GenusR)], main = "Treatment")
+plotResiduals(res1, Diversity$Distance[!is.na(Diversity$GenusR)],  main = "Distance")
 par(op)
 
 # residuals vs. random factors : plots suggest variance heterogeneity for the different sites
 op2 <- par(mfrow=c(1,2), mar = c(4,4,2,2))
-plotResiduals(res, Diversity$Site[!is.na(Diversity$GenusR)])
-plotResiduals(res, Diversity$session[!is.na(Diversity$GenusR)])
+plotResiduals(res1, Diversity$Site[!is.na(Diversity$GenusR)])
+plotResiduals(res1, Diversity$session[!is.na(Diversity$GenusR)])
 par(op2)
 
 # plot suggesting non-normality (blue line not so close to the red line)
 plot_model(mod1_sc, type = "slope")
 
-## Full model 2: add non-linear pattern with landscape
+## Full model 2: add non-linear pattern with landscape-----
 mod2 <- lmer(GenusR ~ poly(Ldscp, 2)*Treatment*Guild + Treatment*Distance*Guild + 
                (1|Site/session) ,
              data=Diversity, control=lmerControl(optimizer="bobyqa"))
@@ -159,9 +158,7 @@ nrow(Diversity[!is.na(Diversity$GenusR),])
 # Rescale and center continuous predictors: landscape and distance variables
 mod2_sc <- update(mod2,data=Div)
 
-## Check model assumptions------------------
-
-## Inspect residuals
+## Inspect residuals------
 ## residuals vs. fitted
 plot(mod2_sc)
 
@@ -180,11 +177,128 @@ plotResiduals(res2, Diversity$Distance[!is.na(Diversity$GenusR)], main = "Distan
 par(mfrow = c(1,1))
 
 # residuals vs. random factors : plots suggest variance heterogeneity for the different sites
-op3 <- par(mfrow=c(1,3), mar = c(4,4,2,2))
+op3 <- par(mfrow=c(1,2), mar = c(4,4,2,2))
 plotResiduals(res2, Diversity$Site[!is.na(Diversity$GenusR)])
 plotResiduals(res2, Diversity$session[!is.na(Diversity$GenusR)])
-plotResiduals(res2, Diversity$session[!is.na(Diversity$GenusR)]:Diversity$Site[!is.na(Diversity$GenusR)])
 par(op3)
 
-## Full model 3 : variance heterogeneity
+## Full model 3 : transform response variable-------
+mod3 <- lmer(log10(GenusR+1) ~ Ldscp*Treatment*Guild + Treatment*Distance*Guild + 
+               (1|Site/session) ,
+             data=Diversity, control=lmerControl(optimizer="bobyqa"))
+
+# Rescale and center continuous predictors: landscape and distance variables
+mod3_sc <- update(mod3,data=Div)
+
+## Inspect residuals-------
+## residuals vs. fitted
+plot(mod3_sc)
+
+# check residuals with Dharma
+res3 <- simulateResiduals(mod3_sc, plot = T)
+
+# Formal goodness of fit tests
+testResiduals(res3)
+
+# residuals vs. predictors
+par(mfrow = c(2,2))
+plotResiduals(res3, scale(Diversity$Ldscp[!is.na(Diversity$GenusR)]), asFactor = FALSE, main = "Landscape")
+plotResiduals(res3, Diversity$Guild[!is.na(Diversity$GenusR)], main = "Guild")
+plotResiduals(res3, Diversity$Treatment[!is.na(Diversity$GenusR)], main = "Treatment")
+plotResiduals(res3, Diversity$Distance[!is.na(Diversity$GenusR)], main = "Distance")
+par(mfrow = c(1,1))
+
+# residuals vs. random factors : plots suggest variance heterogeneity for the different sites
+op3 <- par(mfrow=c(1,2), mar = c(4,4,2,2))
+plotResiduals(res3, Diversity$Site[!is.na(Diversity$GenusR)])
+plotResiduals(res3, Diversity$session[!is.na(Diversity$GenusR)])
+par(op3)
+
+## Final Full Model ------------------
+modfull <- lmer(log10(GenusR+1) ~ poly(Ldscp,2)*Treatment*Guild + Treatment*Distance*Guild + 
+               (1|Site/session) ,
+             data=Diversity, control=lmerControl(optimizer="bobyqa"))
+
+# Rescale and center continuous predictors: landscape and distance variables
+modfull_sc <- update(modfull,data=Div)
+
+# Insct residuals ------
+## residuals vs. fitted
+plot(modfull_sc)
+
+# check residuals with Dharma
+res <- simulateResiduals(modfull_sc, plot = T)
+
+# Formal goodness of fit tests
+testResiduals(res)
+
+# residuals vs. predictors
+par(mfrow = c(2,2))
+plotResiduals(res, scale(Diversity$Ldscp[!is.na(Diversity$GenusR)]), asFactor = FALSE, main = "Landscape")
+plotResiduals(res, Diversity$Guild[!is.na(Diversity$GenusR)], main = "Guild")
+plotResiduals(res, Diversity$Treatment[!is.na(Diversity$GenusR)], main = "Treatment")
+plotResiduals(res, Diversity$Distance[!is.na(Diversity$GenusR)], main = "Distance")
+par(mfrow = c(1,1))
+
+# residuals vs. random factors : plots suggest variance heterogeneity for the different sites
+op3 <- par(mfrow=c(1,3), mar = c(4,4,2,2))
+plotResiduals(res, Diversity$Site[!is.na(Diversity$GenusR)])
+plotResiduals(res, Diversity$session[!is.na(Diversity$GenusR)])
+plotResiduals(res, Diversity$session[!is.na(Diversity$GenusR)]:Diversity$Site[!is.na(Diversity$GenusR)])
+par(op3)
+
+
+
+## Model selection-------------------------------------------------------------
+# recode model with ML instead of REML
+modfull_ml <- lmer(log10(GenusR+1) ~ poly(Ldscp,2)*Treatment*Guild + Treatment*Distance*Guild + 
+                     (1|Site/session) ,
+                   REML = FALSE,
+                   data=Div, 
+                   control=lmerControl(optimizer="bobyqa"))
+
+drop1(modfull_ml, test = "Chisq")
+
+# drop1 renders a F test based on type III analysis of variance, with Sattherthwaite's method for DF
+anova(modsel1)
+# shows that both methods give the same results
+anova(modsel1, ddf = "Kenward-Roger")
+
+# The interaction Treatment:Guild:Distance is ns, delta AIC is 2, and LRT is very small
+modsel1 <- update(modfull_ml, .~. -Treatment:Guild:Distance)
+
+# step 2
+drop1(modsel1)
+
+# three way interaction landscape:treatment:guild is ns still
+modsel2 <- update(modsel1, .~. -poly(Ldscp, 2):Treatment:Guild)
+
+anova(modsel2)
+drop1(modsel2)
+
+# guid:distance is the least significant interaction (F value and p)
+modsel3 <- update(modsel2, .~. -Guild:Distance)
+drop1(modsel3)
+
+# treatment:distance is the least significant interaction (F value and p)
+modsel4 <- update(modsel3, .~. -Treatment:Distance)
+drop1(modsel4)
+
+# landscape:treatment is the least significant interaction (F value and p)
+modsel5 <- update(modsel4, .~. -poly(Ldscp, 2):Treatment)
+drop1(modsel5)
+
+# treatment;guild is the least significant interaction (F value and p)
+modsel6 <- update(modsel5, .~. -Treatment:Guild)
+drop1(modsel6)
+
+# treatment is least significant
+modsel7 <- update(modsel6, .~. -Treatment)
+drop1(modsel7)
+
+# distance is least significant
+modsel8 <- update(modsel7, .~. -Distance)
+drop1(modsel8)
+
+# no further model simplification
 
