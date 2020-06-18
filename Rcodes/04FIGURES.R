@@ -10,6 +10,7 @@ library(viridis)
 
 ## Data----------------------------------------------------------------------------
 Abundance <- read.csv("Output/AbundanceClean.csv")
+Diversity <- read.csv("Output/DiversityClean.csv")
 # Preddata <- read.csv("Output/PredationPest_clean.csv")
 
 
@@ -40,6 +41,29 @@ F1A <- ggplot(data = Abundance, aes(y=Total, x=Treatment, fill = Treatment))+
         axis.title.x = element_blank())
 F1A
 
+# Panel A - Flower strips increase the abundance of natural enemies
+
+# reorder levels of treatment
+Diversity$Treatment <- relevel(Diversity$Treatment, ref = "Low Div")
+
+# set sizes of text in plots
+sizetext <- 10
+sizelegend <- 8
+
+F2A <- ggplot(data = Diversity[!is.na(Diversity$GenusR),], aes(y=GenusR, x=Treatment, fill = Treatment))+
+  geom_boxplot()+
+  geom_jitter(width = .25, alpha = .4, size = 0.4)+
+  scale_fill_viridis_d(begin = 0.5)+
+  # scale_fill_manual(values = c(pal[2], pal[3]))+
+  ylab("Natural enemies genus richness")+
+  theme_bw()+
+  theme(legend.position = "none", 
+        axis.text.y=element_text(face = "bold", size = sizelegend),
+        axis.text.x=element_text(size = sizetext),
+        axis.title.y = element_text(size=sizetext, face = "bold"),
+        axis.title.x = element_blank())
+F2A
+
 
 # save a png with high res
 ppi <- 300# final: 600 # resolution
@@ -51,7 +75,7 @@ png("Figures/Fig1.png",
     units = "cm",
     res=ppi)
 
-F1A
+F1A+F2A
 
 dev.off()
 
