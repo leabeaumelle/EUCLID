@@ -183,6 +183,14 @@ JustGenus <- subset(GenusList_wide,
 # richness calculation
 GenusList_wide$GR <- specnumber(JustGenus)
 
+## Tableau pour RDA avec landscape
+Ldscp <- read.csv("Output/Landscapevars.csv")
+Ldscp$Site <- as.factor(as.character(Ldscp$couple))
+Ldscp$Ldscp <- Ldscp$HSN1000
+
+GenusList_Adrien <- dplyr::left_join(GenusList_wide, Ldscp, by = "Site")
+write.csv(GenusList_Adrien, "Output/GenusList_forAdrien.csv")
+                               
 ## Make a diversity table with different richness estimates-----
 
 # Create diversity dataframe, and adds taxonomic richness

@@ -70,7 +70,7 @@ ppi <- 300# final: 600 # resolution
 w <- 20 # width in cm
 
 png("Figures/Fig1.png",
-    width=w/3,
+    width=2*(w/3),
     height=w/3,
     units = "cm",
     res=ppi)
