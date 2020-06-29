@@ -16,7 +16,9 @@
 # Session = multiple sessions per plot
 
 
-## Functions---------------------------------------------------------------------------
+##----------------------------------------
+## Functions ------------------------------
+##----------------------------------------
 library(dplyr)
 library(lme4)
 library(MuMIn)
@@ -27,12 +29,10 @@ library(lattice)
 library(optimx)
 library(lmerTest)
 
-# from previous codes
-# library(lmerTest)
-# library("blmeco")
-# library("sjstats")
+##----------------------------------------
+## Load data------------------------------
+##----------------------------------------
 
-## Load data---------------------------------------------------------------------------
 Diversity <- read.csv("Output/DiversityClean.csv")
 Diversity$Site <- as.factor(Diversity$Site)
 
@@ -49,7 +49,13 @@ numcols <- grep("Ldscp|Dist",names(Diversity))
 Div <- Diversity
 Div[,numcols] <- scale(Div[,numcols])
 
-## Data exploration--------------------
+
+
+
+##----------------------------------------
+## 1. Data exploration-----------------------
+##----------------------------------------
+
 summary(Diversity$GenusR)
 summary(Diversity$TaxaR)
 
@@ -102,7 +108,11 @@ xyplot(TaxaR ~ factor(Site):factor(session), data = Diversity)
 xyplot(GenusR ~ factor(Site):factor(session), data = Diversity)
 
 
-## Modelling-----------------------------------
+
+##----------------------------------------
+## 2. Full models ---------------------------
+##----------------------------------------
+
 ## Full model 1 -----
 mod1 <- lmer(GenusR ~ Ldscp*Treatment*Guild + Treatment*Distance*Guild + 
                    (1|Site/session) ,
@@ -117,7 +127,6 @@ logLik(mod1)/nrow(Diversity[!is.na(Diversity$GenusR),])
 
 mod1_sc <- update(mod1,data=Div)
 
-## Inspect residuals-----
 ## residuals vs. fitted
 plot(mod1_sc)
 
@@ -144,10 +153,11 @@ par(op2)
 # plot suggesting non-normality (blue line not so close to the red line)
 plot_model(mod1_sc, type = "slope")
 
+
 ## Full model 2: add non-linear pattern with landscape-----
-mod2 <- lmer(GenusR ~ poly(Ldscp, 2)*Treatment*Guild + Treatment*Distance*Guild + 
+mod2_sc <- lmer(GenusR ~ poly(Ldscp, 2)*Treatment*Guild + Treatment*Distance*Guild + 
                (1|Site/session) ,
-             data=Diversity, control=lmerControl(optimizer="bobyqa"))
+             data=Div, control=lmerControl(optimizer="bobyqa"))
 
 # model complexity vs. sample size
 # k = 25; n = 364
@@ -156,10 +166,6 @@ nrow(Diversity[!is.na(Diversity$GenusR),])
 # the ratio n/k should be between 3 and 10 (Harrison, 2018)
 364/25
 
-# Rescale and center continuous predictors: landscape and distance variables
-mod2_sc <- update(mod2,data=Div)
-
-## Inspect residuals------
 ## residuals vs. fitted
 plot(mod2_sc)
 
@@ -183,15 +189,12 @@ plotResiduals(res2, Diversity$Site[!is.na(Diversity$GenusR)])
 plotResiduals(res2, Diversity$session[!is.na(Diversity$GenusR)])
 par(op3)
 
+
 ## Full model 3 : transform response variable-------
-mod3 <- lmer(log10(GenusR+1) ~ Ldscp*Treatment*Guild + Treatment*Distance*Guild + 
+mod3_sc <- lmer(log10(GenusR+1) ~ Ldscp*Treatment*Guild + Treatment*Distance*Guild + 
                (1|Site/session) ,
-             data=Diversity, control=lmerControl(optimizer="bobyqa"))
+             data=Div, control=lmerControl(optimizer="bobyqa"))
 
-# Rescale and center continuous predictors: landscape and distance variables
-mod3_sc <- update(mod3,data=Div)
-
-## Inspect residuals-------
 ## residuals vs. fitted
 plot(mod3_sc)
 
@@ -216,14 +219,10 @@ plotResiduals(res3, Diversity$session[!is.na(Diversity$GenusR)])
 par(op3)
 
 ## Final Full Model ------------------
-modfull <- lmer(log10(GenusR+1) ~ poly(Ldscp,2)*Treatment*Guild + Treatment*Distance*Guild + 
+modfull_sc <- lmer(log10(GenusR+1) ~ poly(Ldscp,2)*Treatment*Guild + Treatment*Distance*Guild + 
                (1|Site/session) ,
-             data=Diversity, control=lmerControl(optimizer="bobyqa"))
+             data=Div, control=lmerControl(optimizer="bobyqa"))
 
-# Rescale and center continuous predictors: landscape and distance variables
-modfull_sc <- update(modfull,data=Div)
-
-# Inspect residuals ------
 ## residuals vs. fitted
 plot(modfull_sc)
 
@@ -254,7 +253,12 @@ tab_model(modfull_sc)
 saveRDS(modfull_sc, file = "Output/NEDiversity_FullModel.rds")
 
 
-## Model selection-------------------------------------------------------------
+
+
+##----------------------------------------------
+## 3. Model selection------------------------------
+##----------------------------------------------
+
 # recode model with ML instead of REML
 modfull_ml <- lmer(log10(GenusR+1) ~ poly(Ldscp,2)*Treatment*Guild + Treatment*Distance*Guild + 
                      (1|Site/session) ,
@@ -338,17 +342,29 @@ plotResiduals(res, Diversity$Distance[!is.na(Diversity$GenusR)],  main = "Distan
 par(mfrow = c(1,1))
 
 
-# save model results
-tab_model(modfin_lme4)
-# tab_model(mod8_sc, p.val = "kr") #more precise p-values but require model to be fitted with REML
 
-saveRDS(modfin_lme4, file = "Output/NEDiversity_OptimalModel.rds")
+
+##----------------------------------------
+## 4. Results ------------------------------
+##----------------------------------------
+
+tab_model(modfin_lme4)
 
 # Plot showing Landscape:Guild effect on log10(richness)
 plot_model(modfin_lme4, type = "pred", terms = c("Ldscp [all]", "Guild"))
 
+# save model results----
+saveRDS(modfin_lme4, file = "Output/NEDiversity_OptimalModel.rds")
 
-## Repeat the analysis removing vegetation data ------------------------------------------
+
+
+
+
+##----------------------------------------
+## 5. Sensitivity analysis  --------------
+##----------------------------------------
+
+## Repeat the analysis removing vegetation data----
 # these data confound the distance effect because
 # no vegetation sampling was carried out at distances 15 and 30m
 
@@ -364,8 +380,8 @@ mod1_novg <- lme4::lmer(GenusR ~ poly(Ldscp, 2)*Treatment*Guild + Distance*Treat
                       control= lmerControl(optimizer="bobyqa"))
 
 
-# Check model assumptions for the optimal model
-## Inspect residuals
+# Check model assumptions for the full model
+
 ## residuals vs. fitted
 plot(mod1_novg)
 
@@ -381,9 +397,6 @@ mod1_novg2 <- lme4::lmer(log10(GenusR+1) ~ poly(Ldscp, 2)*Treatment*Guild + Dist
                         data = DivNoVg,
                         control= lmerControl(optimizer="bobyqa"))
 
-
-# Check model assumptions for the optimal model
-## Inspect residuals
 ## residuals vs. fitted
 plot(mod1_novg2)
 
@@ -412,9 +425,6 @@ mod1_novg3 <- lme4::lmer(log10(GenusR+1) ~ Ldscp*Treatment*Guild + Distance*Trea
                          data = DivNoVg,
                          control= lmerControl(optimizer="bobyqa"))
 
-
-# Check model assumptions for the optimal model
-## Inspect residuals
 ## residuals vs. fitted
 plot(mod1_novg3)
 
