@@ -442,7 +442,7 @@ par(mfrow = c(1,1))
 ## Save No vegetation Full model results-------
 tab_model(mod1_novg2)
 
-saveRDS(mod1_novg2, file = "Output/NEDiversity_FullModel.rds")
+saveRDS(mod1_novg2, file = "Output/NEDiversity_FullModel_NoVg.rds")
 
 ## Model selection no vegetation data--------
 
@@ -523,6 +523,155 @@ saveRDS(modopt_novg, file = "Output/NEDiversity_OptimalModel_NoVegetation.rds")
 
 # Plot showing Landscape:Guild effect on log10(richness)
 plot_model(modopt_novg, type = "pred", terms = c("Ldscp [all]", "Guild"))
+
+## Compare both models with and without vegetation-------------------
+tab_model(modopt_novg, modfin_lme4)
+
+
+## Repeat the analysis for taxonomic richness-----------------------
+
+# taxonomic richness is assuming that within each sample,
+# individuals not identified to the genus belong to a genus not represented by individuals identified
+# i.e. is a number of taxonomic units mixing different taxonomic resolution
+
+
+## Full model taxonomic richness ----------
+mod1_taxar <- lme4::lmer(TaxaR ~ poly(Ldscp, 2)*Treatment*Guild + Distance*Treatment*Guild + 
+                          (1|Site/session),
+                        REML = TRUE,
+                        data = Div,
+                        control= lmerControl(optimizer="bobyqa"))
+
+# Check model assumptions for the full model
+
+## residuals vs. fitted
+plot(mod1_taxar)
+
+# strong variance heterogeneity
+
+# check residuals with Dharma
+res <- simulateResiduals(mod1_taxar, plot = T)
+
+# simulated residuals are not uniformly distributed
+
+
+# Log transform variable
+mod1_taxar2 <- lme4::lmer(log10(TaxaR+1) ~ poly(Ldscp, 2)*Treatment*Guild + Distance*Treatment*Guild + 
+                           (1|Site/session),
+                         REML = TRUE,
+                         data = Div,
+                         control= lmerControl(optimizer="bobyqa"))
+
+## residuals vs. fitted
+plot(mod1_taxar2)
+
+# check residuals with Dharma
+res <- simulateResiduals(mod1_taxar2, plot = T)
+
+# not signif. deviating from uniform distrib, but patterns visually
+
+# Formal goodness of fit tests
+testResiduals(res)
+
+# residuals vs. predictors
+par(mfrow = c(2,2))
+plotResiduals(res, scale(Div$Ldscp), asFactor = FALSE, main = "Landscape")
+plotResiduals(res, Div$Guild, main = "Guild")
+plotResiduals(res, Div$Treatment, main = "Treatment")
+plotResiduals(res, Div$Distance,  main = "Distance")
+par(mfrow = c(1,1))
+
+# guild effect on simulated residuals: more variance for vegetation data than the rest
+
+# decision to proceed anyways as this is just a sensitivity analysis: but residuals not great
+
+## Results taxo richness Full model -------
+tab_model(mod1_taxar2)
+
+saveRDS(mod1_taxar2, file = "Output/NEDiversity_FullModel_TaxoR.rds")
+
+## Model selection taxo richness data--------
+
+# Estimate with ML instead of REML
+mod1_taxarFull <- update(mod1_taxar2, REML = FALSE)
+
+# first step
+drop1(mod1_taxarFull, test = "Chisq")
+
+# The interaction Treatment:Guild:Distance is ns : SAME AS BEFORE
+modsel1_taxar <- update(mod1_taxarFull, .~. -Treatment:Guild:Distance)
+
+# step 2
+drop1(modsel1_taxar, test = "Chisq")
+
+# interaction landscape:treatment:guild ns: SAME
+modsel2_taxar <- update(modsel1_taxar, .~. -poly(Ldscp, 2):Treatment:Guild)
+
+drop1(modsel2_taxar, test= "Chisq")
+
+# Treatment:distance is the least significant interaction: DIFFERENT THAN BEFORE (but = next step)
+modsel3_taxar <- update(modsel2_taxar, .~. -Treatment:Distance)
+drop1(modsel3_taxar, test = "Chisq")
+
+# Guild:distance is the least significant interaction (LRT values): DIFFERENT THAN BEFORE (but = previous steps)
+modsel4_taxar <- update(modsel3_taxar, .~. -Guild:Distance)
+drop1(modsel4_taxar, test = "Chisq")
+
+# landscape:treatment is the least significant interaction (based on LRT, not AIC): SAME AS BEFORE
+modsel5_taxar <- update(modsel4_taxar, .~. -poly(Ldscp, 2):Treatment)
+drop1(modsel5_taxar, test = "Chisq")
+
+# treatment;guild is the least significant interaction: SAME AS BEFORE
+modsel6_taxar <- update(modsel5_taxar, .~. -Treatment:Guild)
+drop1(modsel6_taxar, test = "Chisq")
+
+# treatment is NOW significant: DIFFERENT THAN BEFORE 
+modsel7_taxar <- update(modsel6_taxar, .~. -Distance)
+drop1(modsel7_taxar, test = "Chisq")
+
+# Landscape:guild is not significant: DIFFERENT 
+modsel8_taxar <- update(modsel7_taxar, .~. -poly(Ldscp, 2):Guild)
+drop1(modsel8_taxar, test = "Chisq")
+
+# no further deletion
+
+## Validation of optimal model--------
+
+modopt_taxar <- update(modsel8_taxar, REML = TRUE)
+
+# Check model assumptions for the optimal model
+## Inspect residuals
+plot(modopt_taxar)
+
+# check residuals with Dharma
+res <- simulateResiduals(modopt_taxar, plot = T)
+
+# tests are ns, however, the qq plot is NOT looking good. 
+
+# Formal goodness of fit tests
+testResiduals(res)
+
+# distribution not great, but K-S test is not statistically significant
+
+# residuals vs. predictors
+par(mfrow = c(2,2))
+plotResiduals(res, scale(Div$Ldscp), asFactor = FALSE, main = "Landscape")
+plotResiduals(res, Div$Guild, main = "Guild")
+plotResiduals(res, Div$Treatment, main = "Treatment")
+plotResiduals(res, Div$Distance,  main = "Distance")
+par(mfrow = c(1,1))
+
+# trend with landscape and with guild: deviation from uniform
+
+# save model results
+tab_model(modopt_taxar)
+
+saveRDS(modopt_taxar, file = "Output/NEDiversity_OptimalModel_TaxoR.rds")
+
+# Plot showing Landscape:Guild effect on log10(richness)
+plot_model(modopt_taxar, type = "pred", terms = c("Ldscp [all]"))
+plot_model(modopt_taxar, type = "pred", terms = c("Guild"))
+plot_model(modopt_taxar, type = "pred", terms = c("Guild [all]"))
 
 ## Compare both models with and without vegetation-------------------
 tab_model(modopt_novg, modfin_lme4)

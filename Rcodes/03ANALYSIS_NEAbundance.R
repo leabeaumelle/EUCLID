@@ -15,6 +15,7 @@
 # site = pairs of plots with same Landscp
 # Session = multiple sessions per plot
 
+
 ## Functions---------------------------------------------------------------------------
 library(dplyr)
 library(lme4)
@@ -25,10 +26,6 @@ library(sjPlot)
 library(lattice)
 library(optimx)
 
-# from previous codes
-# library(lmerTest)
-# library("blmeco")
-# library("sjstats")
 
 ## Load data---------------------------------------------------------------------------
 Abundance <- read.csv("Output/AbundanceClean.csv")
@@ -42,7 +39,15 @@ Abundance <- left_join(Abundance, Ldscp, by = "Site")
 Abundance$Site <- as.factor(Abundance$Site)
 Abundance$session <- as.factor(as.character(Abundance$session))
 
-## Data exploration--------------------
+# Rescale and center continuous predictors: landscape and distance variables
+numcols <- grep("Ldscp|Dist",names(Abundance))
+Abs <- Abundance
+Abs[,numcols] <- scale(Abs[,numcols])
+
+
+
+
+## Data exploration----------------------------------------------------------
 summary(Abundance$Total)
 
 hist(Abundance$Total)
@@ -78,8 +83,7 @@ plot(Abundance$Total ~ factor(Abundance$session), varwidth = TRUE)
 xyplot(Total ~ factor(Site):factor(session), data = Abundance)
 
 
-## Modelling-----------------------------------
-# full model
+## Full models -------------------------------------------------------------------------
 mod1 <- glmer.nb(Total ~ Ldscp*Treatment*Guild + Treatment*Distance*Guild + 
                     (1|Site/session) ,
                   data=Abundance, control=glmerControl(optimizer="bobyqa"))
@@ -91,11 +95,9 @@ nrow(Abundance)
 # the ratio n/k should be between 3 and 10 (Harrison, 2018)
 366/19
 
-# Rescale and center continuous predictors: landscape and distance variables
-numcols <- grep("Ldscp|Dist",names(Abundance))
-Abs <- Abundance
-Abs[,numcols] <- scale(Abs[,numcols])
+# Rescale continuous variables
 mod1_sc <- update(mod1,data=Abs)
+
 
 ## Check model assumptions------------------
 
@@ -130,6 +132,10 @@ saveRDS(mod1_sc, file = "Output/NEAbundance_FullModel.rds")
 
 
 ## Model selection------------------------
+
+# Fit with ML for model selection
+mod1_ml <- update(mod1_sc)
+
 drop1(mod1_sc, test = "Chisq")
 
 # Three way interactions are not significant: dropping the Treatment:Guild:Distance first
