@@ -1,6 +1,6 @@
 ## Models for natural enemies richness
 
-# The scripts tests the effects of flower strips, landscape on Nat enemies densities
+# The scripts tests the effects of flower strips, landscape on Nat enemies genus richness
 # Model selection, model assumption checks, and results stored into output folder.
 
 ## Main Analysis - Landscape*FlowerStrips*Community
@@ -43,6 +43,11 @@ Ldscp$Ldscp <- Ldscp$HSN1000
 Diversity <- left_join(Diversity, Ldscp, by = "Site")
 Diversity$Site <- as.factor(Diversity$Site)
 Diversity$session <- as.factor(as.character(Diversity$session))
+
+# Rescale and center continuous predictors: landscape and distance variables
+numcols <- grep("Ldscp|Dist",names(Diversity))
+Div <- Diversity
+Div[,numcols] <- scale(Div[,numcols])
 
 ## Data exploration--------------------
 summary(Diversity$GenusR)
@@ -110,10 +115,6 @@ nrow(Diversity[!is.na(Diversity$GenusR),])
 # the ratio n/k should be between 3 and 10 (Harrison, 2018)
 logLik(mod1)/nrow(Diversity[!is.na(Diversity$GenusR),])
 
-# Rescale and center continuous predictors: landscape and distance variables
-numcols <- grep("Ldscp|Dist",names(Diversity))
-Div <- Diversity
-Div[,numcols] <- scale(Div[,numcols])
 mod1_sc <- update(mod1,data=Div)
 
 ## Inspect residuals-----
@@ -222,7 +223,7 @@ modfull <- lmer(log10(GenusR+1) ~ poly(Ldscp,2)*Treatment*Guild + Treatment*Dist
 # Rescale and center continuous predictors: landscape and distance variables
 modfull_sc <- update(modfull,data=Div)
 
-# Insct residuals ------
+# Inspect residuals ------
 ## residuals vs. fitted
 plot(modfull_sc)
 
@@ -247,6 +248,10 @@ plotResiduals(res, Diversity$session[!is.na(Diversity$GenusR)])
 plotResiduals(res, Diversity$session[!is.na(Diversity$GenusR)]:Diversity$Site[!is.na(Diversity$GenusR)])
 par(op3)
 
+## Save Full model results-------
+tab_model(modfull_sc)
+
+saveRDS(modfull_sc, file = "Output/NEDiversity_FullModel.rds")
 
 
 ## Model selection-------------------------------------------------------------
@@ -339,9 +344,182 @@ tab_model(modfin_lme4)
 
 saveRDS(modfin_lme4, file = "Output/NEDiversity_OptimalModel.rds")
 
-# get mean values predicted
-plot_model(modfin_lme4, type = "pred")
-
 # Plot showing Landscape:Guild effect on log10(richness)
 plot_model(modfin_lme4, type = "pred", terms = c("Ldscp [all]", "Guild"))
 
+
+## Repeat the analysis removing vegetation data ------------------------------------------
+# these data confound the distance effect because
+# no vegetation sampling was carried out at distances 15 and 30m
+
+DivNoVg <- Div %>% filter(Guild != "Vegetation")
+DivNoVg <- droplevels(DivNoVg)
+
+
+## Full model without vegetation data-----------
+mod1_novg <- lme4::lmer(GenusR ~ poly(Ldscp, 2)*Treatment*Guild + Distance*Treatment*Guild + 
+                        (1|Site/session),
+                        REML = TRUE,
+                      data = DivNoVg,
+                      control= lmerControl(optimizer="bobyqa"))
+
+
+# Check model assumptions for the optimal model
+## Inspect residuals
+## residuals vs. fitted
+plot(mod1_novg)
+
+# check residuals with Dharma
+res <- simulateResiduals(mod1_novg, plot = T)
+
+# signs of heteroscedasticity
+
+# Log transform variable
+mod1_novg2 <- lme4::lmer(log10(GenusR+1) ~ poly(Ldscp, 2)*Treatment*Guild + Distance*Treatment*Guild + 
+                          (1|Site/session),
+                        REML = TRUE,
+                        data = DivNoVg,
+                        control= lmerControl(optimizer="bobyqa"))
+
+
+# Check model assumptions for the optimal model
+## Inspect residuals
+## residuals vs. fitted
+plot(mod1_novg2)
+
+# check residuals with Dharma
+res <- simulateResiduals(mod1_novg2, plot = T)
+
+# no signs of heteroscedasticity
+
+# Formal goodness of fit tests
+testResiduals(res)
+
+# residuals vs. predictors
+par(mfrow = c(2,2))
+plotResiduals(res, scale(DivNoVg$Ldscp[!is.na(DivNoVg$GenusR)]), asFactor = FALSE, main = "Landscape")
+plotResiduals(res, DivNoVg$Guild[!is.na(DivNoVg$GenusR)], main = "Guild")
+plotResiduals(res, DivNoVg$Treatment[!is.na(DivNoVg$GenusR)], main = "Treatment")
+plotResiduals(res, DivNoVg$Distance[!is.na(DivNoVg$GenusR)],  main = "Distance")
+par(mfrow = c(1,1))
+
+# adjusted quantile test significant for landscape: strange pattern in residuals vs. landscape
+
+# Remove non linear effect
+mod1_novg3 <- lme4::lmer(log10(GenusR+1) ~ Ldscp*Treatment*Guild + Distance*Treatment*Guild + 
+                           (1|Site/session),
+                         REML = TRUE,
+                         data = DivNoVg,
+                         control= lmerControl(optimizer="bobyqa"))
+
+
+# Check model assumptions for the optimal model
+## Inspect residuals
+## residuals vs. fitted
+plot(mod1_novg3)
+
+# check residuals with Dharma
+res <- simulateResiduals(mod1_novg3, plot = T)
+
+# no signs of heteroscedasticity, but slight deviation from uniform distrib (lower quantiles..)
+
+# Formal goodness of fit tests
+testResiduals(res)
+
+# residuals vs. predictors
+par(mfrow = c(2,2))
+plotResiduals(res, scale(DivNoVg$Ldscp[!is.na(DivNoVg$GenusR)]), asFactor = FALSE, main = "Landscape")
+plotResiduals(res, DivNoVg$Guild[!is.na(DivNoVg$GenusR)], main = "Guild")
+plotResiduals(res, DivNoVg$Treatment[!is.na(DivNoVg$GenusR)], main = "Treatment")
+plotResiduals(res, DivNoVg$Distance[!is.na(DivNoVg$GenusR)],  main = "Distance")
+par(mfrow = c(1,1))
+
+# patterns increase if landscape effect is linear. Keep the non-linear trend
+
+## Save No vegetation Full model results-------
+tab_model(mod1_novg2)
+
+saveRDS(mod1_novg2, file = "Output/NEDiversity_FullModel.rds")
+
+## Model selection no vegetation data--------
+
+# Estimate with ML instead of REML
+mod1_novgFull <- update(mod1_novg2, REML = FALSE)
+
+# first step
+drop1(mod1_novgFull, test = "Chisq")
+
+# The interaction Treatment:Guild:Distance is ns : SAME AS BEFORE
+modsel1_novg <- update(mod1_novgFull, .~. -Treatment:Guild:Distance)
+
+# step 2
+drop1(modsel1_novg, test = "Chisq")
+
+# interaction Guild:Distance not significant: DIFFERENT THAN BEFORE (landscape:treatment:guild)
+modsel2_novg <- update(modsel1_novg, .~. -Guild:Distance)
+
+drop1(modsel2_novg, test= "Chisq")
+
+# landscape:treatment:guild is the least significant interaction: NOW SAME AS BEFORE
+modsel3_novg <- update(modsel2_novg, .~. -poly(Ldscp, 2):Treatment:Guild)
+drop1(modsel3_novg, test = "Chisq")
+
+# treatment:distance is the least significant interaction (based on AIC and LRT values): SAME AS BEFORE
+modsel4_novg <- update(modsel3_novg, .~. -Treatment:Distance)
+drop1(modsel4_novg, test = "Chisq")
+
+# landscape:treatment is the least significant interaction (based on LRT, not AIC): SAME AS BEFORE
+modsel5_novg <- update(modsel4_novg, .~. -poly(Ldscp, 2):Treatment)
+drop1(modsel5_novg, test = "Chisq")
+
+# treatment;guild is the least significant interaction: SAME AS BEFORE
+modsel6_novg <- update(modsel5_novg, .~. -Treatment:Guild)
+drop1(modsel6_novg, test = "Chisq")
+
+# treatment is least significant: SAME AS BEFORE
+modsel7_novg <- update(modsel6_novg, .~. -Treatment)
+drop1(modsel7_novg, test = "Chisq")
+
+# distance is least significant: SAME AS BEFORE
+modsel8_novg <- update(modsel7_novg, .~. -Distance)
+drop1(modsel8_novg, test = "Chisq")
+
+# no further deletion
+
+## Validation of optimal model--------
+
+modopt_novg <- update(modsel8_novg, REML = TRUE)
+
+## Model validation ------------------------------------------------
+
+# Check model assumptions for the optimal model
+## Inspect residuals
+plot(modopt_novg)
+
+# check residuals with Dharma
+res <- simulateResiduals(modopt_novg, plot = T)
+
+# Formal goodness of fit tests
+testResiduals(res)
+
+# distribution not great, but K-S test is not statistically significant
+
+# residuals vs. predictors
+par(mfrow = c(2,2))
+plotResiduals(res, scale(DivNoVg$Ldscp[!is.na(DivNoVg$GenusR)]), asFactor = FALSE, main = "Landscape")
+plotResiduals(res, DivNoVg$Guild[!is.na(DivNoVg$GenusR)], main = "Guild")
+plotResiduals(res, DivNoVg$Treatment[!is.na(DivNoVg$GenusR)], main = "Treatment")
+plotResiduals(res, DivNoVg$Distance[!is.na(DivNoVg$GenusR)],  main = "Distance")
+par(mfrow = c(1,1))
+
+
+# save model results
+tab_model(modopt_novg)
+
+saveRDS(modopt_novg, file = "Output/NEDiversity_OptimalModel_NoVegetation.rds")
+
+# Plot showing Landscape:Guild effect on log10(richness)
+plot_model(modopt_novg, type = "pred", terms = c("Ldscp [all]", "Guild"))
+
+## Compare both models with and without vegetation-------------------
+tab_model(modopt_novg, modfin_lme4)
