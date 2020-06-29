@@ -260,7 +260,7 @@ saveRDS(modfull_sc, file = "Output/NEDiversity_FullModel.rds")
 ##----------------------------------------------
 
 # recode model with ML instead of REML
-modfull_ml <- lmer(log10(GenusR+1) ~ poly(Ldscp,2)*Treatment*Guild + Treatment*Distance*Guild + 
+modfull_ml <- lme4::lmer(log10(GenusR+1) ~ poly(Ldscp,2)*Treatment*Guild + Treatment*Distance*Guild + 
                      (1|Site/session) ,
                    REML = FALSE,
                    data=Div, 
@@ -268,46 +268,39 @@ modfull_ml <- lmer(log10(GenusR+1) ~ poly(Ldscp,2)*Treatment*Guild + Treatment*D
 
 drop1(modfull_ml, test = "Chisq")
 
-# drop1 renders a F test based on type III analysis of variance, with Sattherthwaite's method for DF
-anova(modsel1)
-# shows that both methods give the same results
-anova(modsel1, ddf = "Kenward-Roger")
-
 # The interaction Treatment:Guild:Distance is ns, delta AIC is 2, and LRT is very small
 modsel1 <- update(modfull_ml, .~. -Treatment:Guild:Distance)
 
 # step 2
-drop1(modsel1)
+drop1(modsel1, test = "Chisq")
 
 # three way interaction landscape:treatment:guild is ns still
 modsel2 <- update(modsel1, .~. -poly(Ldscp, 2):Treatment:Guild)
+drop1(modsel2, test = "Chisq")
 
-anova(modsel2)
-drop1(modsel2)
-
-# guid:distance is the least significant interaction (F value and p)
+# guid:distance is the least significant interaction
 modsel3 <- update(modsel2, .~. -Guild:Distance)
-drop1(modsel3)
+drop1(modsel3, test = "Chisq")
 
 # treatment:distance is the least significant interaction (F value and p)
 modsel4 <- update(modsel3, .~. -Treatment:Distance)
-drop1(modsel4)
+drop1(modsel4, test = "Chisq")
 
 # landscape:treatment is the least significant interaction (F value and p)
 modsel5 <- update(modsel4, .~. -poly(Ldscp, 2):Treatment)
-drop1(modsel5)
+drop1(modsel5, test = "Chisq")
 
 # treatment;guild is the least significant interaction (F value and p)
 modsel6 <- update(modsel5, .~. -Treatment:Guild)
-drop1(modsel6)
+drop1(modsel6, test = "Chisq")
 
 # treatment is least significant
 modsel7 <- update(modsel6, .~. -Treatment)
-drop1(modsel7)
+drop1(modsel7, test = "Chisq")
 
 # distance is least significant
 modsel8 <- update(modsel7, .~. -Distance)
-drop1(modsel8)
+drop1(modsel8, test = "Chisq")
 
 # no further model simplification
 
