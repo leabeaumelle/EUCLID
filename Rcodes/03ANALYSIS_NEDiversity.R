@@ -27,7 +27,8 @@ library(MASS)
 library(sjPlot)
 library(lattice)
 library(optimx)
-library(lmerTest)
+library(car)
+# library(lmerTest)
 
 ##----------------------------------------
 ## Load data------------------------------
@@ -114,18 +115,15 @@ xyplot(GenusR ~ factor(Site):factor(session), data = Diversity)
 ##----------------------------------------
 
 ## Full model 1 -----
-mod1 <- lmer(GenusR ~ Ldscp*Treatment*Guild + Treatment*Distance*Guild + 
+mod1_sc <- lmer(GenusR ~ Ldscp*Treatment*Guild + Treatment*Distance*Guild + 
                    (1|Site/session) ,
-                 data=Diversity, control=lmerControl(optimizer="bobyqa"))
+                 data=Div, control=lmerControl(optimizer="bobyqa"))
 
 # model complexity vs. sample size
 # k = 19: 16 (fixed) + 2 (random) + 1 (error term); n = 364
 logLik(mod1) # gives the df of the model (19)
 nrow(Diversity[!is.na(Diversity$GenusR),])
 # the ratio n/k should be between 3 and 10 (Harrison, 2018)
-logLik(mod1)/nrow(Diversity[!is.na(Diversity$GenusR),])
-
-mod1_sc <- update(mod1,data=Div)
 
 ## residuals vs. fitted
 plot(mod1_sc)
@@ -144,13 +142,7 @@ plotResiduals(res1, Diversity$Treatment[!is.na(Diversity$GenusR)], main = "Treat
 plotResiduals(res1, Diversity$Distance[!is.na(Diversity$GenusR)],  main = "Distance")
 par(op)
 
-# residuals vs. random factors : plots suggest variance heterogeneity for the different sites
-op2 <- par(mfrow=c(1,2), mar = c(4,4,2,2))
-plotResiduals(res1, Diversity$Site[!is.na(Diversity$GenusR)])
-plotResiduals(res1, Diversity$session[!is.na(Diversity$GenusR)])
-par(op2)
-
-# plot suggesting non-normality (blue line not so close to the red line)
+# other plots suggesting non-normality (blue line not so close to the red line)
 plot_model(mod1_sc, type = "slope")
 
 
@@ -249,6 +241,7 @@ par(op3)
 
 ## Save Full model results-------
 tab_model(modfull_sc)
+Anova(modfull_sc)
 
 saveRDS(modfull_sc, file = "Output/NEDiversity_FullModel.rds")
 
@@ -282,12 +275,12 @@ drop1(modsel2, test = "Chisq")
 modsel3 <- update(modsel2, .~. -Guild:Distance)
 drop1(modsel3, test = "Chisq")
 
-# treatment:distance is the least significant interaction (F value and p)
-modsel4 <- update(modsel3, .~. -Treatment:Distance)
+# Ldscp:treatment is the least significant interaction
+modsel4 <- update(modsel3, .~. -poly(Ldscp, 2):Treatment )
 drop1(modsel4, test = "Chisq")
 
-# landscape:treatment is the least significant interaction (F value and p)
-modsel5 <- update(modsel4, .~. -poly(Ldscp, 2):Treatment)
+# Treatment:distance is ns
+modsel5 <- update(modsel4, .~. -Treatment:Distance)
 drop1(modsel5, test = "Chisq")
 
 # treatment;guild is the least significant interaction (F value and p)
@@ -468,11 +461,11 @@ modsel3_novg <- update(modsel2_novg, .~. -poly(Ldscp, 2):Treatment:Guild)
 drop1(modsel3_novg, test = "Chisq")
 
 # treatment:distance is the least significant interaction (based on AIC and LRT values): SAME AS BEFORE
-modsel4_novg <- update(modsel3_novg, .~. -Treatment:Distance)
+modsel4_novg <- update(modsel3_novg, .~. -poly(Ldscp, 2):Treatment)
 drop1(modsel4_novg, test = "Chisq")
 
 # landscape:treatment is the least significant interaction (based on LRT, not AIC): SAME AS BEFORE
-modsel5_novg <- update(modsel4_novg, .~. -poly(Ldscp, 2):Treatment)
+modsel5_novg <- update(modsel4_novg, .~. -Treatment:Distance)
 drop1(modsel5_novg, test = "Chisq")
 
 # treatment;guild is the least significant interaction: SAME AS BEFORE
