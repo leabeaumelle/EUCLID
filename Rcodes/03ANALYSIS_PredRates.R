@@ -21,31 +21,44 @@ library(lme4)
 library(MuMIn)
 library(DHARMa)
 library(MASS)
-
-# from previous codes
-# library(lmerTest)
-# library("blmeco")
-# library("sjstats")
+library(sjPlot)
+library(lattice)
+library(optimx)
+library(car)
 
 ## Load data---------------------------------------------------------------------------
-Preddata <- read.csv("Output/PredationPest_clean.csv")
+Pred <- read.csv("Output/PredationPest_clean.csv")
+Pred$Site <- as.factor(as.character(Pred$Site))
+
+Ldscp <- read.csv("Output/Landscapevars.csv")
+Ldscp$Site <- as.factor(as.character(Ldscp$couple))
+Ldscp$Ldscp <- Ldscp$HSN1000
+
+Pred <- left_join(Pred, Ldscp, by = "Site")
+Pred$Site <- as.factor(as.character(Pred$Site))
+
+## Data exploration---------------------------------------------------------------------------
+
+summary(Pred)
+
+# NAs predation rates: sites 9, 6 and 11, in high div and low div treatments, at distance 0m and in sessions 1 and 2
+Pred[is.na(Pred$PredRate),]
+
+# bimodal distribution: lots of zeros and ones
+hist(Pred$PredRate)
+
+# relationships
+plot(Pred$PredRate ~ Pred$Ldscp)
+plot(Pred$PredRate ~ Pred$Treatment)
+plot(Pred$PredRate ~ Pred$Distance)
+
+# random effects
+plot(Pred$PredRate ~ Pred$Site)
+plot(Pred$PredRate ~ Pred$Session)
+
 
 ## Run model---------------------------------------------------------------------------
-totEN <- glmer.nb(Y ~ Landscp*Treatment*Community + Treatment*Distc*Community + 
-                    (1|Site/Session) ,
-                  data=NEData , control=glmerControl(optimizer="bobyqa"))
 
-standardize(totEN)
-summary(totEN)
-overdisp_fun(totEN)
-plot(simulateResiduals(totEN))
-set_totEN<-dredge(totEN,rank="AICc")
-topmod_set_totEN<-get.models(set_totEN,subset=delta<2) 
-topmod_set_totEN # Deux meilleurs modeles : bande + mod + (1|couple) & mod + (1|couple)
-modavg_totEN<-model.avg(topmod_set_totEN) ; modavg_totEN
-summary(modavg_totEN) ; confint(modavg_totEN)
-r.squaredGLMM(topmod_set_totEN$'4')
-# Significativement moins d'Ennemis naturels a 20m.
 
 ## Check assumptions ---------------------------------------------------------------------
 
