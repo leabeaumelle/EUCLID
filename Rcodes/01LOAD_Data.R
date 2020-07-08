@@ -95,7 +95,7 @@ CO <- CO %>% mutate(code2_session = paste(code2,session))
 CO2018 <- subset(CO, annee == "2018")
 
 # save raw data in output
-write.csv(EN_2018, "Output/PredationPest_raw.csv")
+write.csv(CO2018, "Output/PredationPest_raw.csv")
 
 
 ## 3. Landscape variables----------------------------------------------------------------
@@ -113,68 +113,70 @@ write.csv(HSN, "Output/LandscapeVars.csv")
 ##################################
 ## II. Supplementary analyses#####
 
-## II. A. Sensitivity analysis on 2017-2018 datasets for 4 pairs of plots#################
+# TO DO--
 
-# which sites have been sampled in both years?
-table(CO$couple,CO$annee)
-whichSite <- c(2,6,7,8)
-
-## 1. Natural enemies--------------------------------------------------------------------
-# Load 2017 data
-EN<-read.table("Data/EUCLID - inventaire - bis.txt",sep="\t",dec=",",header=T)
-
-EN$couple<-as.factor(EN$couple)
-EN$mod<-as.factor(EN$mod)
-EN$session<-as.factor(EN$session)
-# NA removal
-EN<-EN[complete.cases(EN[,"eff"]),]
-rownames(EN)<-NULL
-# Add code2_session column
-EN <- EN %>% mutate(code2_session = paste(code2,session))
-# "taxon" column : order_family_genus_species
-EN <- EN %>% mutate(taxon = paste(order,family,genus,species,sep="_"))
-# Column "codeRs" : if a S_ is added before the name, it means that the individual is identified at a species level,
-# a G_ at the genus level, a F_ at the family level and a 0_ at the order level.
-EN <- EN %>% mutate(codeRs = case_when(
-  str_detect(taxon , "___") == TRUE ~ str_c("O_" , taxon), # Order level
-  str_detect(taxon , "idae__") == TRUE ~ str_c("F_" , taxon), # Family level
-  species == "sp." & nchar(as.character(species)) <= 3 ~ str_c("G_" , taxon), # Genus level
-  genus != "" & nchar(as.character(species)) > 3 ~ str_c("S_" , taxon) # Species level
-))
-
-# add year factor to both 2017 and 2018 dataframes
-EN$year <- as.factor(rep("2017", nrow(EN)))
-EN_2018$year <- as.factor(rep("2018", nrow(EN_2018)))
-
-# keep only sites sampled both years
-EN1718 <- left_join(EN_2018,EN)
-EN1718 <- EN1718[EN1718$couple %in% as.character(whichSite),]
-
-# save raw data in output
-write.csv(EN1718, "Output/NatEnemies2017-2018_raw.csv")
-
-## 2. Predation rates--------------------------------------------------------------------
-# keep only sites sampled both years
-CO1718 <- CO[CO$couple %in% as.character(whichSite),]
-
-# save raw data in output
-write.csv(CO1718, "Output/PredationPest2017-2018_raw.csv")
-
-
-
-## II. B. Predation of larvae 2018 ##########
-
-# LARVA CARDS IMPORTATION (data 2017 & 2018)
-CL<-read.table("Data/EUCLID - CL.txt",sep="\t",dec=".",header=T,na.strings="NA")
-
-CL$couple<-as.factor(CL$couple) ; CL$mod<-as.factor(CL$mod)
-CL$session<-as.factor(CL$session) ; CL$annee<-as.factor(CL$annee)
-
-# code2-session column
-CL <- CL %>% mutate(code2_session = paste(code2,session))
-
-# Keep only 2018 data
-CL2018 <- subset(CL, annee == "2018")
-
-# save raw data in output
-write.csv(EN_2018, "Output/PredationPestLarvae_raw.csv")
+# ## II. A. Sensitivity analysis on 2017-2018 datasets for 4 pairs of plots#################
+# 
+# # which sites have been sampled in both years?
+# table(CO$couple,CO$annee)
+# whichSite <- c(2,6,7,8)
+# 
+# ## 1. Natural enemies--------------------------------------------------------------------
+# # Load 2017 data
+# EN<-read.table("Data/EUCLID - inventaire - bis.txt",sep="\t",dec=",",header=T)
+# 
+# EN$couple<-as.factor(EN$couple)
+# EN$mod<-as.factor(EN$mod)
+# EN$session<-as.factor(EN$session)
+# # NA removal
+# EN<-EN[complete.cases(EN[,"eff"]),]
+# rownames(EN)<-NULL
+# # Add code2_session column
+# EN <- EN %>% mutate(code2_session = paste(code2,session))
+# # "taxon" column : order_family_genus_species
+# EN <- EN %>% mutate(taxon = paste(order,family,genus,species,sep="_"))
+# # Column "codeRs" : if a S_ is added before the name, it means that the individual is identified at a species level,
+# # a G_ at the genus level, a F_ at the family level and a 0_ at the order level.
+# EN <- EN %>% mutate(codeRs = case_when(
+#   str_detect(taxon , "___") == TRUE ~ str_c("O_" , taxon), # Order level
+#   str_detect(taxon , "idae__") == TRUE ~ str_c("F_" , taxon), # Family level
+#   species == "sp." & nchar(as.character(species)) <= 3 ~ str_c("G_" , taxon), # Genus level
+#   genus != "" & nchar(as.character(species)) > 3 ~ str_c("S_" , taxon) # Species level
+# ))
+# 
+# # add year factor to both 2017 and 2018 dataframes
+# EN$year <- as.factor(rep("2017", nrow(EN)))
+# EN_2018$year <- as.factor(rep("2018", nrow(EN_2018)))
+# 
+# # keep only sites sampled both years
+# EN1718 <- left_join(EN_2018,EN)
+# EN1718 <- EN1718[EN1718$couple %in% as.character(whichSite),]
+# 
+# # save raw data in output
+# write.csv(EN1718, "Output/NatEnemies2017-2018_raw.csv")
+# 
+# ## 2. Predation rates--------------------------------------------------------------------
+# # keep only sites sampled both years
+# CO1718 <- CO[CO$couple %in% as.character(whichSite),]
+# 
+# # save raw data in output
+# write.csv(CO1718, "Output/PredationPest2017-2018_raw.csv")
+# 
+# 
+# 
+# ## II. B. Predation of larvae 2018 ##########
+# 
+# # LARVA CARDS IMPORTATION (data 2017 & 2018)
+# CL<-read.table("Data/EUCLID - CL.txt",sep="\t",dec=".",header=T,na.strings="NA")
+# 
+# CL$couple<-as.factor(CL$couple) ; CL$mod<-as.factor(CL$mod)
+# CL$session<-as.factor(CL$session) ; CL$annee<-as.factor(CL$annee)
+# 
+# # code2-session column
+# CL <- CL %>% mutate(code2_session = paste(code2,session))
+# 
+# # Keep only 2018 data
+# CL2018 <- subset(CL, annee == "2018")
+# 
+# # save raw data in output
+# write.csv(EN_2018, "Output/PredationPestLarvae_raw.csv")
