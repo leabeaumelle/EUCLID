@@ -256,19 +256,19 @@ saveRDS(modfull_sc, file = "Output/NEDiversity_FullModel.rds")
 modfull_ml <- lme4::lmer(log10(GenusR+1) ~ poly(Ldscp,2)*Treatment*Guild + Treatment*Distance*Guild + 
                      (1|Site/session) ,
                    REML = FALSE,
-                   data=Div, 
+                   data=Div[!is.na(Div$GenusR),], 
                    control=lmerControl(optimizer="bobyqa"))
 
 drop1(modfull_ml, test = "Chisq")
 
-# The interaction Treatment:Guild:Distance is ns, delta AIC is 2, and LRT is very small
-modsel1 <- update(modfull_ml, .~. -Treatment:Guild:Distance)
+# The interaction Ldscp:Treatment:Guild has highest P
+modsel1 <- update(modfull_ml, .~. -poly(Ldscp, 2):Treatment:Guild)
 
 # step 2
 drop1(modsel1, test = "Chisq")
 
-# three way interaction landscape:treatment:guild is ns still
-modsel2 <- update(modsel1, .~. -poly(Ldscp, 2):Treatment:Guild)
+# three way interaction treatment:guild:distance is ns still
+modsel2 <- update(modsel1, .~. -Treatment:Guild:Distance)
 drop1(modsel2, test = "Chisq")
 
 # guid:distance is the least significant interaction
@@ -439,8 +439,8 @@ saveRDS(mod1_novg2, file = "Output/NEDiversity_FullModel_NoVg.rds")
 
 ## Model selection no vegetation data--------
 
-# Estimate with ML instead of REML
-mod1_novgFull <- update(mod1_novg2, REML = FALSE)
+# Estimate with ML instead of REML and remove NAs
+mod1_novgFull <- update(mod1_novg2, REML = FALSE, data = DivNoVg[!is.na(DivNoVg$GenusR),])
 
 # first step
 drop1(mod1_novgFull, test = "Chisq")
