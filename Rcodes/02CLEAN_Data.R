@@ -273,14 +273,33 @@ write.csv(Div_final, "Output/DiversityClean.csv")
 ## Load data--------------------------------------------
 Pred <- read.csv("Output/PredationPest_raw.csv")
 
-## 1. Calculate predation rates---------------------------------
+## Rename variables------------------------------
+Pred$Treatment <- factor(ifelse(Pred$bande=="BE", "Low Div", "High Div"))
 
-## 2. Add explanatory variables---------------------------------
+Pred$Distance <- ifelse(Pred$mod == "00m", 0,
+                      ifelse(Pred$mod  == "05m", 15,
+                             30))
+Pred$Site <- factor(Pred$couple)
+Pred$Session <- factor(Pred$session)
+
+## Check missing values------------------------
+
+table(Pred$Site, Pred$Treatment) # on site 6, there are missing values
+table(Pred$Site, Pred$Session) # on site 6, half the data for session 1 are missing
+table(Pred$Site, Pred$Session) # session 3 as only 18 observations for all sites
+table(Pred$Site, Pred$Distance) # All distances were sampled equally, even site 6
 
 
+## Predation rates------------------------------
+
+Pred$PredRate <- Pred$Tx_pred # proportion of eggs predated per card
+
+# Subset dataframe-------------------------------
+
+PredClean <- subset(Pred, select = c("Site", "Treatment", "Distance", "Session", "PredRate"))
 
 # Save cleaned data---------------------------------
-write.csv("Output/PredationPest_clean.csv")
+write.csv(PredClean, "Output/PredationPest_clean.csv")
 
 
 ## Supplementary Analysis - Year effect
