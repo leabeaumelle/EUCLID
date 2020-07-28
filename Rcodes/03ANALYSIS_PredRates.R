@@ -169,9 +169,40 @@ Anova(modfull)
 
 saveRDS(modfull, file = "Output/PredRate_FullModel.rds")
 
+## MODEL SELECTION--------------
 
+# step 1
+drop1(modfull, test = "Chisq")
 
-## Check assumptions ---------------------------------------------------------------------
+# Treatment:Distance is not significant
+modsel1 <- update(modfull,  .~. -Treatment:Distance)
+
+# step 2
+drop1(modsel1, test = "Chisq")
+
+# Distance ns
+modsel2 <- update(modsel1, .~. -Distance)
+
+# step 3
+drop1(modsel2, test = "Chisq")
+
+# no further deletion, but singular warning is still on
+modOpt <- modsel2
+isSingular(modOpt)
+
+summary(modOpt) # issue is the random effect structure: variance is zero
+VarCorr(modOpt)
+
+# check residuals with Dharma: outlier test significant (2 values > 1)
+resOpt <- simulateResiduals(modOpt, plot = T)
+
+# residuals vs. predictors : no strong sign of var heterogeneity
+op <- par(mfrow = c(1, 3), mar = c(4, 4, 2, 2))
+plotResiduals(resOpt, Pred_sc$Ldscp[!is.na(Pred_sc$PredRate)], asFactor = FALSE, main = "Landscape")
+plotResiduals(resOpt, Pred_sc$Treatment[!is.na(Pred_sc$PredRate)], main = "Treatment")
+plotResiduals(resOpt, Pred_sc$Distance[!is.na(Pred_sc$PredRate)],  main = "Distance")
+par(op)
+
 
 
 ## Store model results as output ---------------------------------------------------------
