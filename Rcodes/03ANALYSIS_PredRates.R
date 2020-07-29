@@ -49,6 +49,12 @@ summary(Pred)
 # NAs predation rates: sites 9, 6 and 11, in high div and low div treatments, at distance 0m and in sessions 1 and 2
 Pred[is.na(Pred$PredRate),]
 
+# dataset structure
+summary(Pred$Site) # Site 6 has only 90 obs versus 114 in the others
+table(Pred$Site, Pred$Session) # SIte 6 has twice less obsrvations than other sites in session1
+table(Pred$Site, Pred$Session, Pred$Distance) # these missing observations are spread across distances,
+table(Pred$Site, Pred$Session, Pred$Distance, Pred$Treatment) # these missing observations are spread across distances,
+
 # bimodal distribution: lots of zeros and ones
 hist(Pred$PredRate)
 
