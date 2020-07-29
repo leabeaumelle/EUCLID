@@ -36,6 +36,7 @@ Ldscp$Ldscp <- Ldscp$HSN1000
 
 Pred <- left_join(Pred, Ldscp, by = "Site")
 Pred$Site <- as.factor(as.character(Pred$Site))
+Pred$Session <- as.factor(as.character(Pred$Session))
 
 # Rescale and center continuous predictors: landscape and distance variables
 numcols <- grep("Ldscp|Dist",names(Pred))
@@ -202,14 +203,45 @@ VarCorr(modOpt)
 # check residuals with Dharma: outlier test significant (2 values > 1)
 resOpt <- simulateResiduals(modOpt, plot = T)
 
-# residuals vs. predictors : no strong sign of var heterogeneity
+# residuals vs. predictors : no strong sign of var heterogeneity nor patterns with predictors
 op <- par(mfrow = c(1, 3), mar = c(4, 4, 2, 2))
 plotResiduals(resOpt, Pred_sc$Ldscp[!is.na(Pred_sc$PredRate)], asFactor = FALSE, main = "Landscape")
 plotResiduals(resOpt, Pred_sc$Treatment[!is.na(Pred_sc$PredRate)], main = "Treatment")
 plotResiduals(resOpt, Pred_sc$Distance[!is.na(Pred_sc$PredRate)],  main = "Distance")
 par(op)
 
+## The model is singular because the SIte random effect has VAR = 0
 
+## Find the optimal random effect structure ----------
+
+# Following Zuur et al. Book protocol (p.121)
+## Step 1
+modre1 <- glm.nb(PredRate * 10 ~ poly(Ldscp, 2) * Treatment + Treatment * Distance, 
+                 data = Pred_sc)
+
+modre2 <- glmer.nb(PredRate * 10 ~ poly(Ldscp, 2) * Treatment + Treatment * Distance + (1 | Site),
+                   data = Pred_sc)
+modre3 <- glmer.nb(PredRate * 10 ~ poly(Ldscp, 2) * Treatment + Treatment * Distance + (1 | Site/Session),
+                   data = Pred_sc)
+
+# Step 2: Best model is with Site/session as random effects
+AIC(modre1, modre2, modre3)
+anova(modre3, modre2, modre1)
+
+## And starting with Session random effect
+
+## Step 1
+modre1b <- glm.nb(PredRate * 10 ~ poly(Ldscp, 2) * Treatment + Treatment * Distance, 
+                 data = Pred_sc)
+
+modre2b <- glmer.nb(PredRate * 10 ~ poly(Ldscp, 2) * Treatment + Treatment * Distance + (1 | Session),
+                   data = Pred_sc)
+# Step 2: Best model is with Site/session as random effects
+AIC(modre1b, modre2b, modre3)
+anova(modre3, modre2b, modre1b)
+
+
+# the model with nested random effect structure is the best. 
 
 ## Store model results as output ---------------------------------------------------------
 
