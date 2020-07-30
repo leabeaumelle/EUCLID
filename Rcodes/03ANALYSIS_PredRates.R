@@ -243,7 +243,10 @@ anova(modre3, modre2b, modre1b)
 
 
 ## New Full model with new random effect structure----------------------------------------
-modFullnew <- glmer.nb(PredRate*10 ~ poly(Ldscp, 2)*Treatment + Treatment*Distance + (1|Session),
+Pred_sc$PredCount <- Pred_sc$PredRate*10 # creates variable number of eggs predated to solve issue with tab_model
+
+
+modFullnew <- glmer.nb(PredCount ~ poly(Ldscp, 2)*Treatment + Treatment*Distance + (1|Session),
                   data = Pred_sc)
 
 # model complexity vs. sample size
@@ -294,7 +297,6 @@ drop1(modsel2, test = "Chisq")
 # no further deletion
 
 ## Optimal model selected ----------------------------------------------------------------
-Pred_sc$PredCount <- Pred_sc$PredRate*10 # creates variable number of eggs predated to solve issue with tab_model
 
 modOpt <- glmer.nb(PredCount ~ poly(Ldscp, 2)*Treatment + (1|Session),
                                 data = Pred_sc)
