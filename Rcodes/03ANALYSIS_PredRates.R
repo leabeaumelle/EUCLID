@@ -18,12 +18,11 @@
 ## Functions---------------------------------------------------------------------------
 library(dplyr)
 library(lme4)
-library(MuMIn)
+# library(MuMIn)
 library(DHARMa)
-library(MASS)
 library(sjPlot)
-library(lattice)
-library(optimx)
+# library(lattice)
+# library(optimx)
 library(car)
 
 ## Load data---------------------------------------------------------------------------
@@ -240,8 +239,97 @@ modre2b <- glmer.nb(PredRate * 10 ~ poly(Ldscp, 2) * Treatment + Treatment * Dis
 AIC(modre1b, modre2b, modre3)
 anova(modre3, modre2b, modre1b)
 
+# the model with only session as a random effect structure is the best, and has no singularity issue.
 
-# the model with nested random effect structure is the best. 
 
-## Store model results as output ---------------------------------------------------------
+## New Full model with new random effect structure----------------------------------------
+modFullnew <- glmer.nb(PredRate*10 ~ poly(Ldscp, 2)*Treatment + Treatment*Distance + (1|Session),
+                  data = Pred_sc)
+
+# model complexity vs. sample size
+logLik(modFullnew)  # gives the df of the model (10)
+nrow(Pred[!is.na(Pred$PredRate),])/attr(logLik(modFullnew), "df")  # the ratio n/k largely exceeds 10
+
+
+# check residuals with Dharma: good but outlier test is significant
+res1new <- simulateResiduals(modFullnew, plot = T)
+
+# residuals vs. predictors: good but at distance 15m, quartiles don't fully match uniform distrib
+op <- par(mfrow = c(2, 3), mar = c(4, 4, 2, 2))
+plotResiduals(res1new, Pred_sc$Ldscp[!is.na(Pred_sc$PredRate)], asFactor = FALSE, main = "Landscape")
+plotResiduals(res1new, Pred_sc$Treatment[!is.na(Pred_sc$PredRate)], main = "Treatment")
+plotResiduals(res1new, Pred_sc$Distance[!is.na(Pred_sc$PredRate)],  main = "Distance")
+plotResiduals(res1new, Pred_sc$Site[!is.na(Pred_sc$PredRate)],  main = "Site")
+plotResiduals(res1new, Pred_sc$Session[!is.na(Pred_sc$PredRate)],  main = "Session")
+par(op)
+
+
+# residuals: look good, but quartiles of residuals per Site, DIstance and Session levels slightly differ from uniformity
+
+## Save Full model with new random effect structure----------------------------------------
+modfull <- modFullnew
+
+# tab_model(modfull)
+Anova(modfull)
+
+saveRDS(modfull, file = "Output/PredRate_FullModelnew.rds")
+
+## MODEL SELECTION with new random effect structure--------------
+
+# step 1
+drop1(modfull, test = "Chisq")
+
+# Treatment:Distance is not significant
+modsel1 <- update(modfull,  .~. -Treatment:Distance)
+
+# step 2
+drop1(modsel1, test = "Chisq")
+
+# Distance ns
+modsel2 <- update(modsel1, .~. -Distance)
+
+# step 3
+drop1(modsel2, test = "Chisq")
+
+# no further deletion
+
+## Optimal model selected ----------------------------------------------------------------
+Pred_sc$PredCount <- Pred_sc$PredRate*10 # creates variable number of eggs predated to solve issue with tab_model
+
+modOpt <- glmer.nb(PredCount ~ poly(Ldscp, 2)*Treatment + (1|Session),
+                                data = Pred_sc)
+isSingular(modOpt)
+
+summary(modOpt)
+
+# check residuals with Dharma: outlier test significant (2 values > 1)
+resOpt <- simulateResiduals(modOpt, plot = T)
+
+# residuals vs. predictors : no strong sign of var heterogeneity nor patterns with predictors
+op <- par(mfrow = c(2, 3), mar = c(4, 4, 2, 2))
+plotResiduals(resOpt, Pred_sc$Ldscp[!is.na(Pred_sc$PredRate)], asFactor = FALSE, main = "Landscape")
+plotResiduals(resOpt, Pred_sc$Treatment[!is.na(Pred_sc$PredRate)], main = "Treatment")
+plotResiduals(resOpt, Pred_sc$Distance[!is.na(Pred_sc$PredRate)],  main = "Distance")
+plotResiduals(resOpt, Pred_sc$Site[!is.na(Pred_sc$PredRate)],  main = "Site")
+plotResiduals(resOpt, Pred_sc$Session[!is.na(Pred_sc$PredRate)],  main = "Session")
+par(op)
+
+
+## Save results of optimal model---------------------------------------------------------
+saveRDS(modOpt, file = "Output/PredRate_OptimalModel.rds")
+
+
+## Results ------------------------------------------------------------------------------
+modOpt <- readRDS(file = "Output/PredRate_OptimalModel.rds")
+
+tab_model(modOpt)
+
+# Plot showing Landscape:Guild effect on log10(richness)
+plot_model(modOpt, type = "pred", terms = c("Ldscp [all]", "Treatment"))
+plot_model(modOpt, type = "pred", terms = c("Ldscp [all]"))
+plot_model(modOpt, type = "pred", terms = c("Treatment"))
+
+
+
+
 
