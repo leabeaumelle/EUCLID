@@ -84,6 +84,11 @@ plot(Abundance$Total ~ factor(Abundance$session), varwidth = TRUE)
 xyplot(Total ~ factor(Site):factor(session), data = Abundance)
 
 
+## Is a random effect on the Site necessary? (https://stackoverflow.com/questions/53034261/warning-lme4-model-failed-to-converge-with-maxgrad)
+
+# each site has a single landscape value for all observations
+all(rowSums(with(Abs, table(Site, Ldscp))>0)==1)
+
 ## Full models -------------------------------------------------------------------------
 # using dataset Abs where continuous variable are scaled (unscaled vars results in convergence issues)
 
@@ -129,6 +134,11 @@ mod1_nl <- glmer.nb(Total ~ poly(Ldscp, 2)*Treatment*Guild + Treatment*Distance*
                       (1|Site/session) ,
                     data=Abs, control=glmerControl(optimizer="Nelder_Mead",
                                                    optCtrl=list(maxfun=1e4)))
+# testing new re structure
+# mod1_nl <- glmer.nb(Total ~ poly(Ldscp, 2)*Treatment*Guild + Treatment*Distance*Guild + 
+#                       (1|Site:session) ,
+#                     data=Abs, control=glmerControl(optimizer="Nelder_Mead",
+#                                                    optCtrl=list(maxfun=1e4)))
 
 
 # minimum n/k should be between 3-10: ok
@@ -183,10 +193,10 @@ drop1(modsel1, test = "Chisq")
 modsel2 <- update(modsel1, .~. -poly(Ldscp, 2):Treatment:Guild)
 
 # step 3
-drop1(modsel2, test = "Chisq") # convergence issue and other warnings..
+drop1(modsel2, test = "Chisq")
 
 # least significant term is the Treatment:Distance interaction (lowest LRT and highest P)
-modsel3 <- update(modsel2, .~. -Treatment:Distance)
+modsel3 <- update(modsel2, .~. -Treatment:Distance) # convergence warning...
 
 # step 4
 drop1(modsel3, test = "Chisq")
@@ -238,9 +248,10 @@ Anova(modOpt)
 
 
 # different resposne to landscape depending on guild
+plot_model(modOpt, type = "pred", terms = c("Treatment", "Guild"))
+plot_model(modOpt, type = "pred", terms = c("Ldscp [all]", "Treatment"))
 plot_model(modOpt, type = "pred", terms = c("Ldscp [all]", "Guild"))
 plot_model(modOpt, type = "pred", terms = c("Distance [all]", "Guild"))
-plot_model(modOpt, type = "pred", terms = c("Treatment", "Guild"))
 
 
 
@@ -348,7 +359,7 @@ modsel5_novg <- update(modsel4_novg, .~. -Treatment:Guild)
 
 # step 6
 drop1(modsel5_novg, test = "Chisq")
-# Ldscp:Guild interaction ns [same as before]
+# Ldscp:Guild interaction ns [different than before!]
 modsel6_novg <- update(modsel5_novg, .~. -poly(Ldscp, 2):Guild)
 
 # step 7 
