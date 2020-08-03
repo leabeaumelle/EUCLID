@@ -14,7 +14,6 @@ Diversity <- read.csv("Output/DiversityClean.csv")
 Pred <- read.csv("Output/PredationPest_clean.csv")
 
 
-
 ## Figure 1 - overall effect of flower strips on natural enemies and predation------------
 # three panels with overall flower strip effect across landscapes and communitiy types
 
@@ -41,6 +40,9 @@ F1A <- ggplot(data = Abundance, aes(y=Total, x=Treatment, fill = Treatment))+
         axis.title.x = element_blank())
 F1A
 
+# Sample sizes
+Abundance %>% filter(!is.na(Total)) %>% group_by(Treatment) %>% summarize(n())
+
 # Panel B - Flower strips don't change the diversity of natural enemies (genus richness)
 
 # reorder levels of treatment
@@ -63,6 +65,9 @@ F2A <- ggplot(data = Diversity[!is.na(Diversity$GenusR),], aes(y=GenusR, x=Treat
         axis.title.y = element_text(size=sizetext, face = "bold"),
         axis.title.x = element_blank())
 F2A
+
+# Sample sizes
+Diversity %>% filter(!is.na(GenusR)) %>% group_by(Treatment) %>% summarize(n())
 
 
 # Panel C - Flower strips effect on predation depends on the landscape
@@ -88,6 +93,8 @@ F2C <- ggplot(data = Pred[!is.na(Pred$PredRate),], aes(y=PredRate, x=Treatment, 
         axis.title.x = element_blank())
 F2C
 
+# Sample sizes
+Pred %>% filter(!is.na(PredRate)) %>% group_by(Treatment) %>% summarize(n())
 
 # save a png with high res
 ppi <- 300# final: 600 # resolution
