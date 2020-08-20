@@ -247,5 +247,7 @@ plot_model(modOpt, type = "pred", terms = c("Ldscp [all]", "Treatment"))
 plot_model(modOpt, type = "pred", terms = c("Ldscp [all]", "Guild"))
 plot_model(modOpt, type = "pred", terms = c("Distance [all]", "Guild"))
 
-saveRDS(mod1_nl, file = "Output/NEAbundance_OptModel.rds")
+saveRDS(modOpt, file = "Output/NEAbundance_OptimalModel.rds")
 
+
+## TO DO: remove distance data and look how vine, soil and vegetation guilds are affected by the treatment locally
