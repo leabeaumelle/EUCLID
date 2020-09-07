@@ -3,14 +3,14 @@
 # The scripts tests the effects of flower strips, landscape on Nat enemies genus richness
 # Model selection, model assumption checks, and results stored into output folder.
 
-## Main Analysis - Landscape*FlowerStrips*Community
+## Main Analysis - Landscape*PlantDiv*Guild
 
-# Y ~ Landscp*Treatment*Community + Treatment*Distc*Community + (1|Site/Session)
+# Y ~ Landscp*Treatment*Guild + Treatment*Distc*Guild + (1|Site:Session)
 
 # Landscp = cont. var: gradient of proportion of SNH
-# Treatment = factor: flower strip vs. grassy strip
-# Community = factor: vine, soil, vegetation
-# Distc = factor: 0m, 5m, 20 m or continuous
+# Treatment = factor: flower strip (high div) vs. grassy strip (low div)
+# Guild = factor: vine, soil, vegetation
+# Distc = continuous: 0m, 15m, 30 m
 
 # site = pairs of plots with same Landscp
 # Session = multiple sessions per plot
@@ -56,17 +56,12 @@ summary(Diversity$TaxaR)
 
 par(mfrow=c(1,2))
 hist(Diversity$GenusR, main = "Genus richness")
-hist(Diversity$TaxaR, main = "Taxa richness")
+plot(Diversity$GenusR, Diversity$TaxaR); abline(0,1)
 
-
-par(mfrow=c(4,2), mar = c(4,4,2,2))
-plot(Diversity$GenusR ~ Diversity$Site, varwidth = TRUE, main = "Genus")
+par(mfrow=c(2,2), mar = c(4,4,2,2))
 plot(Diversity$TaxaR ~ Diversity$Site, varwidth = TRUE, main = "Taxonomic")
-plot(Diversity$GenusR ~ Diversity$Treatment, varwidth = TRUE)
 plot(Diversity$TaxaR ~ Diversity$Treatment, varwidth = TRUE)
-plot(Diversity$GenusR ~ factor(Diversity$Distance), varwidth = TRUE)
 plot(Diversity$TaxaR ~ factor(Diversity$Distance), varwidth = TRUE)
-plot(Diversity$GenusR ~ Diversity$Guild, varwidth = TRUE)
 plot(Diversity$TaxaR ~ Diversity$Guild, varwidth = TRUE)
 par(mfrow=c(1,1))
 
@@ -79,28 +74,22 @@ table(Diversity$Site, Diversity$session, Diversity$Guild)
 # vegetation sampling at distance 0m at site 10 for both treatments, and at site 9 for high div treatment 
 
 # Extreme values
-dotchart(Diversity$GenusR)
 dotchart(Diversity$TaxaR)
 
 # Pairplots
 pairs(Diversity[,c("TaxaR","GenusR", "Treatment", "Ldscp", "Guild", "Distance", "Site", "session")])
 
 # Landscape relationships across treatments
-par(mfrow=c(1,2))
-plot(Diversity$GenusR ~ Diversity$Ldscp)
 plot(Diversity$TaxaR ~ Diversity$Ldscp)
 
 xyplot(GenusR ~ Ldscp |factor(Treatment)*factor(Guild)*factor(Distance), data = Diversity)
 
 # Random effect structure : measurements from the same session at the same site are not independent
+par(mfrow = c(1,2))
 boxplot(Diversity$TaxaR ~ factor(Diversity$Site), varwidth = TRUE, main = "Taxonomic richness")
-boxplot(Diversity$GenusR ~ factor(Diversity$Site), varwidth = TRUE, main = "Genus richness")
-
 plot(Diversity$TaxaR ~ factor(Diversity$session), varwidth = TRUE)
-plot(Diversity$GenusR ~ factor(Diversity$session), varwidth = TRUE)
 
 xyplot(TaxaR ~ factor(Site):factor(session), data = Diversity)
-xyplot(GenusR ~ factor(Site):factor(session), data = Diversity)
 
 # Taxonomic richness, without vegetation guild
 par(mfrow=c(2,2), mar = c(4,4,2,2))
@@ -142,7 +131,7 @@ plotResiduals(res, Div$Treatment, main = "Treatment")
 plotResiduals(res, Div$Distance,  main = "Distance")
 par(mfrow = c(1,1))
 
-# residuals are uniform, but visually violate variance heterpgeneity, and strong trend with landscape suggest non linear effect needed
+# residuals are uniform, but violate variance heterogeneity, and strong trend with landscape suggest non linear effect needed
 
 ## Full model2: Add non linear landscape effect------
 mod1_taxar2 <- lmer(TaxaR ~ poly(Ldscp, 2)*Treatment*Guild + Distance*Treatment*Guild + 
@@ -169,6 +158,7 @@ plotResiduals(res2, Div$Treatment, main = "Treatment")
 plotResiduals(res2, Div$Distance,  main = "Distance")
 par(mfrow = c(1,1))
 
+# variance heterogeneity is still present,
 
 ## Full model3:  Log transform variable -----
 mod1_taxar3 <- lmer(log10(TaxaR+1) ~ Ldscp*Treatment*Guild + Distance*Treatment*Guild + 
@@ -220,129 +210,14 @@ plotResiduals(res4, Div$Treatment, main = "Treatment")
 plotResiduals(res4, Div$Distance,  main = "Distance")
 par(mfrow = c(1,1))
 
-# deviation due to the distance effect? higher residuals at distance = 15 m.
-
-## Full model5:  Distance as a factor -------------
-Div$DistanceFactor <- ifelse(Div$Distance == min(Div$Distance), "0m", 
-                             ifelse(Div$Distance==max(Div$Distance), "30m", "15m"))
-  
-modfin2 <- lmer(log10(TaxaR+1) ~ poly(Ldscp, 2)*Treatment*Guild + DistanceFactor*Treatment*Guild + 
-                 (1|Site:session),
-               REML = TRUE,
-               data = Div,
-               control= lmerControl(optimizer="bobyqa"))
-
-## residuals vs. fitted
-plot(modfin2)
-
-# check residuals with Dharma
-res5 <- simulateResiduals(modfin2, plot = T)
-
-testQuantiles(res5)
-
-# residuals vs. predictors
-par(mfrow = c(2,2))
-plotResiduals(res5, Div$Ldscp, asFactor = FALSE, main = "Landscape")
-plotResiduals(res5, Div$Guild, main = "Guild")
-plotResiduals(res5, Div$Treatment, main = "Treatment")
-plotResiduals(res5, Div$Distance,  main = "Distance")
-par(mfrow = c(1,1))
-
-# no deviation from uniform distribution detected, no pattern with covariates, 
-
-## SAVE Final Full model ---------------
-tab_model(modfin2)
-
-saveRDS(modfin2, file = "Output/NEDiversity_FullModel_TaxoR.rds")
-
-
-
-## 3. Model selection taxo richness data--------
-
-# Estimate with ML instead of REML
-mod1_taxarFull <- update(modfin2, REML = FALSE)
-
-# first step
-drop1(mod1_taxarFull, test = "Chisq")
-
-# The interaction Treatment:Guild:Distance is ns
-modsel1_taxar <- update(mod1_taxarFull, .~. -poly(Ldscp, 2):Treatment:Guild)
-
-# step 2
-drop1(modsel1_taxar, test = "Chisq")
-
-# interaction Treatment:Guild:DistanceFactor ns
-modsel2_taxar <- update(modsel1_taxar, .~. -Treatment:Guild:DistanceFactor)
-
-drop1(modsel2_taxar, test= "Chisq")
-
-# Treatment:distance is the least significant interaction
-modsel3_taxar <- update(modsel2_taxar, .~. -Treatment:DistanceFactor)
-drop1(modsel3_taxar, test = "Chisq")
-
-# poly(Ldscp, 2):Treatment  is the least significant interaction
-modsel4_taxar <- update(modsel3_taxar, .~. -poly(Ldscp, 2):Treatment )
-drop1(modsel4_taxar, test = "Chisq")
-
-# guild:distance is the least significant interaction
-modsel5_taxar <- update(modsel4_taxar, .~. -Guild:DistanceFactor)
-drop1(modsel5_taxar, test = "Chisq")
-
-# Ldscp:Guild is the least significant interaction
-modsel6_taxar <- update(modsel5_taxar, .~. -poly(Ldscp, 2):Guild )
-drop1(modsel6_taxar, test = "Chisq")
-
-# treatment is the least signficant
-modsel7_taxar <- update(modsel6_taxar, .~. -Treatment:Guild)
-drop1(modsel7_taxar, test = "Chisq")
-
-# Landscape is the least significant
-modsel8_taxar <- update(modsel7_taxar, .~. -poly(Ldscp, 2))
-drop1(modsel8_taxar, test = "Chisq")
-
-# Treatment is the least significant
-modsel9_taxar <- update(modsel8_taxar, .~. -Treatment)
-drop1(modsel9_taxar, test = "Chisq")
-
-
-# no further deletion
-
-## Validation of optimal model--------
-
-modopt_taxar <- update(modsel9_taxar, REML = TRUE)
-
-# Check model assumptions for the optimal model
-## Inspect residuals
-plot(modopt_taxar)
-
-# check residuals with Dharma
-res <- simulateResiduals(modopt_taxar, plot = T)
-
-# not great
-
-# Formal goodness of fit tests
-testResiduals(res)
-
-# distribution not great, but K-S test is not statistically significant
-
-# residuals vs. predictors
-par(mfrow = c(2,2))
-plotResiduals(res, scale(Div$Ldscp), asFactor = FALSE, main = "Landscape")
-plotResiduals(res, Div$Guild, main = "Guild")
-plotResiduals(res, Div$Treatment, main = "Treatment")
-plotResiduals(res, Div$Distance,  main = "Distance")
-par(mfrow = c(1,1))
-
-# trend with landscape and with guild: deviation from uniform: revise the full model
-
-# 4. New Full models-----------------------------------
+## Full model: new distribution---------
 
 # trying out new distribution to fit the data: negative binomial chosen because
 # 1. data are counts (number of species), integer values, positive
 # 2. the variance is much higher than the mean taxa richness (overdispersion)
 mean(Div$TaxaR); var(Div$TaxaR)
 
-# Full model 1b: NB --------------------------------------
+# Full model 1b: Negative Binomial --------------------------------------
 mod1b_taxar <- glmer.nb(TaxaR ~ Ldscp*Treatment*Guild + Distance*Treatment*Guild + 
                      (1|Site:session),
                    data = Div,
@@ -384,13 +259,12 @@ plotResiduals(res2b, Div$Treatment, main = "Treatment")
 plotResiduals(res2b, Div$Distance,  main = "Distance")
 par(mfrow = c(1,1))
 
-# residuals are uniform, and have homogeneous variance, no pattern with landscape, but some patternsfound with guild and distance...
-
+# residuals are uniform, and have homogeneous variance, no pattern with landscape and other covariates
 
 ## SAVE Final Full model ---------------
 tab_model(mod2b_taxar)
 
-saveRDS(mod2b_taxar, file = "Output/NEDiversity_FullModelNB_TaxoR.rds")
+saveRDS(mod2b_taxar, file = "Output/NEDiversity_FullModel.rds")
 
 
 ## 3. Model selection taxo richness data--------
@@ -403,13 +277,10 @@ drop1(mod2b_taxar, test = "Chisq")
 
 # The interaction Treatment:Guild:Distance is ns
 modsel1b_taxar <- update(mod2b_taxar, .~. -Treatment:Guild:Distance)
-
-# step 2
 drop1(modsel1b_taxar, test = "Chisq")
 
 # interaction landscape:treatment:guild ns (dropping three way interactions first)
 modsel2b_taxar <- update(modsel1b_taxar, .~. -poly(Ldscp, 2):Treatment:Guild)
-
 drop1(modsel2b_taxar, test= "Chisq")
 
 # Treatment:distance is the least significant interaction
@@ -472,253 +343,21 @@ par(mfrow = c(1,1))
 
 # trend with landscape and with guild...
 
-Anova(modopt_taxar)
-
-
-# save model results
+# Save model results-------
 tab_model(modopt_taxar)
 
-saveRDS(modopt_taxar, file = "Output/NEDiversity_OptimalModel_TaxoR.rds")
+saveRDS(modopt_taxar, file = "Output/NEDiversity_OptimalModel.rds")
 
-# Plot showing Landscape:Guild effect on log10(richness)
-plot_model(modopt_taxar, type = "pred", terms = c("Ldscp [all]"))
+
+# Plot showing the Guild effect------
 plot_model(modopt_taxar, type = "pred", terms = c("Guild"))
-plot_model(modopt_taxar, type = "pred", terms = c("Guild [all]"))
 
+# Anova tables---------
+Anova(modopt_taxar)
+Anova(mod2b_taxar)
 
 
-
-
-## Repeat the analysis with genus richness ----------
-
-## Full model 1 -----
-mod1_sc <- lmer(GenusR ~ Ldscp*Treatment*Guild + Treatment*Distance*Guild + 
-                   (1|Site:session) ,
-                 data=Div, control=lmerControl(optimizer="bobyqa"))
-
-# model complexity vs. sample size
-# k = 19: 16 (fixed) + 2 (random) + 1 (error term); n = 364
-logLik(mod1) # gives the df of the model (19)
-nrow(Diversity[!is.na(Diversity$GenusR),])
-# the ratio n/k should be between 3 and 10 (Harrison, 2018)
-
-## residuals vs. fitted
-plot(mod1_sc)
-
-# check residuals with Dharma
-res1 <- simulateResiduals(mod1_sc, plot = T)
-
-# Formal goodness of fit tests
-testResiduals(res1)
-
-# residuals vs. predictors : no strong sign of var heterogeneity
-op <- par(mfrow = c(2, 2), mar = c(4, 4, 2, 2))
-plotResiduals(res1, scale(Diversity$Ldscp[!is.na(Diversity$GenusR)]), asFactor = FALSE, main = "Landscape")
-plotResiduals(res1, Diversity$Guild[!is.na(Diversity$GenusR)], main = "Guild")
-plotResiduals(res1, Diversity$Treatment[!is.na(Diversity$GenusR)], main = "Treatment")
-plotResiduals(res1, Diversity$Distance[!is.na(Diversity$GenusR)],  main = "Distance")
-par(op)
-
-# other plots suggesting non-normality (blue line not so close to the red line)
-plot_model(mod1_sc, type = "slope")
-
-
-## Full model 2: add non-linear pattern with landscape-----
-mod2_sc <- lmer(GenusR ~ poly(Ldscp, 2)*Treatment*Guild + Treatment*Distance*Guild + 
-               (1|Site/session) ,
-             data=Div, control=lmerControl(optimizer="bobyqa"))
-
-# model complexity vs. sample size
-# k = 25; n = 364
-logLik(mod2) # gives the df of the model (25)
-nrow(Diversity[!is.na(Diversity$GenusR),])
-# the ratio n/k should be between 3 and 10 (Harrison, 2018)
-364/25
-
-## residuals vs. fitted
-plot(mod2_sc)
-
-# check residuals with Dharma
-res2 <- simulateResiduals(mod2_sc, plot = T)
-
-# Formal goodness of fit tests
-testResiduals(res2)
-
-# residuals vs. predictors
-par(mfrow = c(2,2))
-plotResiduals(res2, scale(Diversity$Ldscp[!is.na(Diversity$GenusR)]), asFactor = FALSE, main = "Landscape")
-plotResiduals(res2, Diversity$Guild[!is.na(Diversity$GenusR)], main = "Guild")
-plotResiduals(res2, Diversity$Treatment[!is.na(Diversity$GenusR)], main = "Treatment")
-plotResiduals(res2, Diversity$Distance[!is.na(Diversity$GenusR)], main = "Distance")
-par(mfrow = c(1,1))
-
-# residuals vs. random factors : plots suggest variance heterogeneity for the different sites
-op3 <- par(mfrow=c(1,2), mar = c(4,4,2,2))
-plotResiduals(res2, Diversity$Site[!is.na(Diversity$GenusR)])
-plotResiduals(res2, Diversity$session[!is.na(Diversity$GenusR)])
-par(op3)
-
-
-## Full model 3 : transform response variable-------
-mod3_sc <- lmer(log10(GenusR+1) ~ Ldscp*Treatment*Guild + Treatment*Distance*Guild + 
-               (1|Site/session) ,
-             data=Div, control=lmerControl(optimizer="bobyqa"))
-
-## residuals vs. fitted
-plot(mod3_sc)
-
-# check residuals with Dharma
-res3 <- simulateResiduals(mod3_sc, plot = T)
-
-# Formal goodness of fit tests
-testResiduals(res3)
-
-# residuals vs. predictors
-par(mfrow = c(2,2))
-plotResiduals(res3, scale(Diversity$Ldscp[!is.na(Diversity$GenusR)]), asFactor = FALSE, main = "Landscape")
-plotResiduals(res3, Diversity$Guild[!is.na(Diversity$GenusR)], main = "Guild")
-plotResiduals(res3, Diversity$Treatment[!is.na(Diversity$GenusR)], main = "Treatment")
-plotResiduals(res3, Diversity$Distance[!is.na(Diversity$GenusR)], main = "Distance")
-par(mfrow = c(1,1))
-
-# residuals vs. random factors : plots suggest variance heterogeneity for the different sites
-op3 <- par(mfrow=c(1,2), mar = c(4,4,2,2))
-plotResiduals(res3, Diversity$Site[!is.na(Diversity$GenusR)])
-plotResiduals(res3, Diversity$session[!is.na(Diversity$GenusR)])
-par(op3)
-
-## Final Full Model ------------------
-modfull_sc <- lmer(log10(GenusR+1) ~ poly(Ldscp,2)*Treatment*Guild + Treatment*Distance*Guild + 
-               (1|Site/session) ,
-             data=Div, control=lmerControl(optimizer="bobyqa"))
-
-## residuals vs. fitted
-plot(modfull_sc)
-
-# check residuals with Dharma
-res <- simulateResiduals(modfull_sc, plot = T)
-
-# Formal goodness of fit tests
-testResiduals(res)
-
-# residuals vs. predictors
-par(mfrow = c(2,2))
-plotResiduals(res, scale(Diversity$Ldscp[!is.na(Diversity$GenusR)]), asFactor = FALSE, main = "Landscape")
-plotResiduals(res, Diversity$Guild[!is.na(Diversity$GenusR)], main = "Guild")
-plotResiduals(res, Diversity$Treatment[!is.na(Diversity$GenusR)], main = "Treatment")
-plotResiduals(res, Diversity$Distance[!is.na(Diversity$GenusR)], main = "Distance")
-par(mfrow = c(1,1))
-
-# residuals vs. random factors : plots suggest variance heterogeneity for the different sites
-op3 <- par(mfrow=c(1,3), mar = c(4,4,2,2))
-plotResiduals(res, Diversity$Site[!is.na(Diversity$GenusR)])
-plotResiduals(res, Diversity$session[!is.na(Diversity$GenusR)])
-plotResiduals(res, Diversity$session[!is.na(Diversity$GenusR)]:Diversity$Site[!is.na(Diversity$GenusR)])
-par(op3)
-
-## Save Full model results-------
-tab_model(modfull_sc)
-Anova(modfull_sc)
-
-saveRDS(modfull_sc, file = "Output/NEDiversity_FullModel.rds")
-
-
-
-
-##----------------------------------------------
-## 3. Model selection------------------------------
-##----------------------------------------------
-
-# recode model with ML instead of REML
-modfull_ml <- lme4::lmer(log10(GenusR+1) ~ poly(Ldscp,2)*Treatment*Guild + Treatment*Distance*Guild + 
-                     (1|Site/session) ,
-                   REML = FALSE,
-                   data=Div[!is.na(Div$GenusR),], 
-                   control=lmerControl(optimizer="bobyqa"))
-
-drop1(modfull_ml, test = "Chisq")
-
-# The interaction Ldscp:Treatment:Guild has highest P
-modsel1 <- update(modfull_ml, .~. -poly(Ldscp, 2):Treatment:Guild)
-
-# step 2
-drop1(modsel1, test = "Chisq")
-
-# three way interaction treatment:guild:distance is ns still
-modsel2 <- update(modsel1, .~. -Treatment:Guild:Distance)
-drop1(modsel2, test = "Chisq")
-
-# guid:distance is the least significant interaction
-modsel3 <- update(modsel2, .~. -Guild:Distance)
-drop1(modsel3, test = "Chisq")
-
-# Ldscp:treatment is the least significant interaction
-modsel4 <- update(modsel3, .~. -poly(Ldscp, 2):Treatment )
-drop1(modsel4, test = "Chisq")
-
-# Treatment:distance is ns
-modsel5 <- update(modsel4, .~. -Treatment:Distance)
-drop1(modsel5, test = "Chisq")
-
-# treatment;guild is the least significant interaction (F value and p)
-modsel6 <- update(modsel5, .~. -Treatment:Guild)
-drop1(modsel6, test = "Chisq")
-
-# treatment is least significant
-modsel7 <- update(modsel6, .~. -Treatment)
-drop1(modsel7, test = "Chisq")
-
-# distance is least significant
-modsel8 <- update(modsel7, .~. -Distance)
-drop1(modsel8, test = "Chisq")
-
-# no further model simplification
-
-## Model validation ------------------------------------------------
-
-# Check model assumptions for the optimal model
-## Inspect residuals
-## residuals vs. fitted
-modfin_lme4 <- lme4::lmer(log10(GenusR + 1) ~ poly(Ldscp, 2) + Guild + poly(Ldscp, 2):Guild  + (1 | Site/session),
-             REML = TRUE,
-             data = Div, 
-             control=lmerControl(optimizer="bobyqa"))
-modfin_lmerT <- lmer(log10(GenusR + 1) ~ poly(Ldscp, 2) + Guild + poly(Ldscp, 2):Guild  + (1 | Site/session),
-                          REML = TRUE,
-                          data = Div, 
-                          control=lmerControl(optimizer="bobyqa"))
-
-plot(modfin_lme4)
-
-# check residuals with Dharma
-res <- simulateResiduals(modfin_lme4, plot = T)
-
-# Formal goodness of fit tests
-testResiduals(res)
-
-# residuals vs. predictors
-par(mfrow = c(2,2))
-plotResiduals(res, scale(Diversity$Ldscp[!is.na(Diversity$GenusR)]), asFactor = FALSE, main = "Landscape")
-plotResiduals(res, Diversity$Guild[!is.na(Diversity$GenusR)], main = "Guild")
-plotResiduals(res, Diversity$Treatment[!is.na(Diversity$GenusR)], main = "Treatment")
-plotResiduals(res, Diversity$Distance[!is.na(Diversity$GenusR)],  main = "Distance")
-par(mfrow = c(1,1))
-
-
-
-
-##----------------------------------------
-## 4. Results ------------------------------
-##----------------------------------------
-
-tab_model(modfin_lme4)
-
-# Plot showing Landscape:Guild effect on log10(richness)
-plot_model(modfin_lme4, type = "pred", terms = c("Ldscp [all]", "Guild"))
-
-# save model results----
-saveRDS(modfin_lme4, file = "Output/NEDiversity_OptimalModel.rds")
-
+# Save results of LRTs-------
 
 
 

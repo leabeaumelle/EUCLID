@@ -301,5 +301,3 @@ PredClean <- subset(Pred, select = c("Site", "Treatment", "Distance", "Session",
 # Save cleaned data---------------------------------
 write.csv(PredClean, "Output/PredationPest_clean.csv")
 
-
-## Supplementary Analysis - Year effect
