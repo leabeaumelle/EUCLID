@@ -54,21 +54,12 @@ modFullAb <- readRDS(file = "Output/NEAbundance_FullModel.rds")
 modFullDiv <- readRDS(file = "Output/NEDiversity_FullModel.rds")
 modFullPred <- readRDS(file = "Output/PredRate_FullModel.rds")
 
-modFullAb_novg <- readRDS(file = "Output/NEAbundance_FullModel_novg.rds")
-modFullDiv_novg <- readRDS(file = "Output/NEDiversity_FullModel_novg.rds")
-
-modFullDiv_taxo <- readRDS(file = "Output/NEDiversity_FullModel_TaxoR.rds")
-modOptDiv_taxo <- readRDS(file = "Output/NEDiversity_OptimalModel_TaxoR.rds")
-
 
 ## Make Table ---------------------------------------------------------------------------
 Anova(modFullAb)
 Anova(modFullDiv)
 Anova(modFullPred)
-Anova(modFullAb_novg)
-Anova(modFullDiv_novg)
-Anova(modFullDiv_taxo)
-Anova(modOptDiv_taxo)
+
 
 ColumnsT1 <- c("Variable", "Predictor", "Chi-sq", "df", "p-value")
 

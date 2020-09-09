@@ -76,7 +76,7 @@ dotchart(Abundance$Total)
 pairs(Abundance[,c("Total", "Treatment", "Ldscp", "Guild", "Distance", "Site", "session")])
 
 # Landscape relationships across treatments
-plot(Abundance$Total ~ Abundance$Ldscp)
+plot(Abundance$Total ~ Abundance$Ldscp, col = Abundance$Treatment)
 xyplot(Total ~ Ldscp |factor(Treatment)*factor(Guild)*factor(Distance), data = Abundance)
 
 # Random effect structure : measurements from the same session at the same site are not independent
