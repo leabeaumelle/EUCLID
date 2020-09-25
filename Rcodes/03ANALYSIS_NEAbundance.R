@@ -236,7 +236,7 @@ plotResiduals(res$scaledResiduals, Abs$Distance,  main = "Distance")
 par(mfrow = c(1,1))
 
 
-## Results
+## Results-----------------
 tab_model(modOpt)
 Anova(modOpt)
 
@@ -248,6 +248,33 @@ plot_model(modOpt, type = "pred", terms = c("Ldscp [all]", "Guild"))
 plot_model(modOpt, type = "pred", terms = c("Distance [all]", "Guild"))
 
 saveRDS(modOpt, file = "Output/NEAbundance_OptimalModel.rds")
+
+# How many more individuals between treatments on average? 
+
+modOpt <- readRDS(file = "Output/NEAbundance_OptimalModel.rds")
+modFull <- readRDS(file = "Output/NEAbundance_FullModel.rds")
+tab_model(modOpt)
+
+library(ggeffects)
+ggpredict(modFull, terms = "Treatment") ## ggpredicts use the reference level
+ggemmeans(modFull, terms = "Treatment") # ggemmeans average across levels
+ggpredict(modFull, terms = "Treatment [all]")
+ggpredict(modFull, terms = c("Treatment", "Guild"))
+ggpredict(modFull, terms = c("Treatment", "Guild", "Ldscp"))
+
+# extract predictions per treatment and guild across landscapes and distances
+IndPredsFull <- (ggemmeans(modFull, terms = c("Treatment"))[[2]])
+
+# percent change in high versus low div (average percent for soil and vine)
+(IndPredsFull[1]-IndPredsFull[2])/IndPredsFull[2]
+     
+# what is intermediate complexityt in the data? 40% SNH
+plot(Abs$HSN1000, Abs$Ldscp)
+
+# by how much distance decreases the abundance of NE?
+IndPredsDist <- ggemmeans(modFull, terms = c("Distance"))[[2]]
+(IndPredsDist[1]-IndPredsDist[3])/IndPredsDist[3]
+
 
 
 ## TO DO: remove distance data and look how vine, soil and vegetation guilds are affected by the treatment locally
