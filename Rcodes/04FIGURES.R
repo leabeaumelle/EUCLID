@@ -8,6 +8,7 @@ library(ggplot2)
 library(patchwork)
 library(viridis)
 library(sjPlot)
+library(ggeffects)
 
 ## Data----------------------------------------------------------------------------
 Abundance <- read.csv("Output/AbundanceClean.csv")
@@ -176,70 +177,131 @@ plot_model(modFullPred, type = "pred", terms = c("Ldscp [all]","Treatment"))
 # colors: get them from viridis
 mycols <- c(scales::viridis_pal(begin = 0.5)(2)[2], 
             scales::viridis_pal(begin = 0.5)(2)[1])
-mycols <- c("#F2DA02",scales::viridis_pal(begin = 0.5)(2)[1])
 
 # set sizes of text in plots
-sizetext <- 8
-sizelegend <- 7
+sizetext <- 10
+sizelegend <- 9
+#colours
+mycols <- c("#F2DA02",scales::viridis_pal(begin = 0.5)(2)[1])
 
-# Make plot
-Fig2A <- plot_model(modFullAb, type = "pred", terms = c("Ldscp [all]","Treatment"),
-           colors = mycols, dot.size = 1.5, line.size = 1, 
-           show.data = TRUE)+
+
+# PANEL ABUNDANCE
+
+# get the predictions with ggeffects
+me <- ggemmeans(modFullAb, c("Ldscp [all]", "Treatment"))
+# take the raw data from ggeffects and compute means and sds
+raw <- attr(me, "rawdata")
+raw2 <- raw %>% group_by(x, group) %>% summarize(response = mean(response, na.rm = TRUE), 
+                                                 sdev = sd(response, na.rm = TRUE))
+
+Fig2A <- ggplot(me, aes(x = x, y = predicted, colour = group), col = mycols) +
+  geom_jitter(data = raw, mapping = aes(x = x, y = response, shape = group), 
+              colour = "gray", fill = "gray", alpha = 0.4)+
+  geom_line(size = 1)+
+  geom_point(data = raw2, mapping = aes(x = x, y = response, fill = group, shape = group), 
+             size = 2.2, colour = "black")+
+  scale_fill_manual(values=mycols)+
+  scale_colour_manual(values=mycols)+
+  scale_shape_manual(values = c(21,24))+
+  geom_ribbon(inherit.aes = FALSE, 
+              mapping = aes(x = x, y = predicted, group = group, fill = group,
+                            ymin = conf.low, ymax = conf.high), alpha = 0.15)+
+  # using jitter for observations here
+  # scale_fill_manual(values=mycols)+
+  ylab("Abundance (individuals)")+
   scale_x_continuous(breaks = c((30-mean(Abs$HSN1000))/sd(Abs$HSN1000), 
                                 (40-mean(Abs$HSN1000))/sd(Abs$HSN1000), 
-                                ((50-mean(Abs$HSN1000))/sd(Abs$HSN1000))),
-                     labels = c(30, 40, 50)
+                                (50-mean(Abs$HSN1000))/sd(Abs$HSN1000), 
+                                ((60-mean(Abs$HSN1000))/sd(Abs$HSN1000))),
+                     labels = c(30, 40, 50, 60)
   )+
   xlab("Landscape complexity (%)")+
-  ylab("Abundance (individuals)")+
-  
   ggtitle("")+
   theme_bw()+
   theme(legend.position = "none",
         legend.text = element_text(size = sizelegend),
-        legend.title = element_text(size = sizetext),
+        legend.title = element_blank(),
         axis.text.y=element_text(face = "bold", size = sizelegend),
         axis.text.x=element_text(face = "bold", size = sizelegend),
         axis.title.y = element_text(size=sizetext, face = "bold"),
         axis.title.x = element_text(size=sizetext, face = "bold"))
 
-Fig2B <-plot_model(modFullDiv, type = "pred", terms = c("Ldscp [all]","Treatment"),
-                    colors = mycols, dot.size = 1.5,line.size = 1,
-                    show.data = TRUE)+
+# PANEL RICHNESS
+
+# get the predictions with ggeffects
+me <- ggemmeans(modFullDiv, c("Ldscp [all]", "Treatment"))
+# take the raw data from ggeffects and compute means and sds
+raw <- attr(me, "rawdata")
+raw2 <- raw %>% group_by(x, group) %>% summarize(response = mean(response, na.rm = TRUE), 
+                                                 sdev = sd(response, na.rm = TRUE))
+
+Fig2B <- ggplot(me, aes(x = x, y = predicted, colour = group), col = mycols) +
+  geom_jitter(data = raw, mapping = aes(x = x, y = response, shape = group), 
+              colour = "gray", fill = "gray", alpha = 0.4)+
+  geom_line(size = 1, linetype = 2)+
+  geom_point(data = raw2, mapping = aes(x = x, y = response, fill = group, shape = group), 
+             size = 2.2, colour = "black")+
+  scale_fill_manual(values=mycols)+
+  scale_colour_manual(values=mycols)+
+  scale_shape_manual(values = c(21,24))+
+  geom_ribbon(inherit.aes = FALSE, 
+               mapping = aes(x = x, y = predicted, group = group, fill = group,
+                             ymin = conf.low, ymax = conf.high), alpha = 0.15)+
+  # using jitter for observations here
+  # scale_fill_manual(values=mycols)+
   ylab("Taxonomic richness (taxa)")+
   scale_x_continuous(breaks = c((30-mean(Abs$HSN1000))/sd(Abs$HSN1000), 
                                 (40-mean(Abs$HSN1000))/sd(Abs$HSN1000), 
-                                ((50-mean(Abs$HSN1000))/sd(Abs$HSN1000))),
-                     labels = c(30, 40, 50)
+                                (50-mean(Abs$HSN1000))/sd(Abs$HSN1000), 
+                                ((60-mean(Abs$HSN1000))/sd(Abs$HSN1000))),
+                     labels = c(30, 40, 50, 60)
   )+
   xlab("Landscape complexity (%)")+
-  
   ggtitle("")+
   theme_bw()+
   theme(legend.position = "none",
         legend.text = element_text(size = sizelegend),
-        legend.title = element_text(size = sizetext),
+        legend.title = element_blank(),
         axis.text.y=element_text(face = "bold", size = sizelegend),
         axis.text.x=element_text(face = "bold", size = sizelegend),
         axis.title.y = element_text(size=sizetext, face = "bold"),
         axis.title.x = element_text(size=sizetext, face = "bold"))
 
-Fig2C <- plot_model(modFullPred, type = "pred", terms = c("Ldscp [all]","Treatment"),
-                    colors = mycols, dot.size = 1.5,line.size = 1,
-                    show.data = TRUE)+
+# PANEL PREDATION
+
+# get the predictions with ggeffects
+me <- ggemmeans(modFullPred, c("Ldscp [all]", "Treatment"))
+# take the raw data from ggeffects and compute means and sds
+raw <- attr(me, "rawdata")
+raw2 <- raw %>% group_by(x, group) %>% summarize(response = mean(response), sdev = sd(response))
+
+Fig2C <- ggplot(me, aes(x = x, y = predicted, colour = group), col = mycols) +
+  geom_jitter(data = raw, mapping = aes(x = x, y = response, shape = group), 
+              colour = "gray", fill = "gray", alpha = 0.4)+
+  geom_line(size = 1)+
+  geom_point(data = raw2, mapping = aes(x = x, y = response, fill = group, shape = group), 
+             size = 2.2, colour = "black")+
+  scale_fill_manual(values=mycols)+
+  scale_colour_manual(values=mycols)+
+  scale_shape_manual(values = c(21,24))+
+  geom_ribbon(inherit.aes = FALSE, 
+              mapping = aes(x = x, y = predicted, group = group, fill = group,
+                            ymin = conf.low, ymax = conf.high), alpha = 0.15)+
+  # using jitter for observations here
+  # scale_fill_manual(values=mycols)+
   ylab("Predation (eggs predated)")+
   scale_x_continuous(breaks = c((30-mean(Abs$HSN1000))/sd(Abs$HSN1000), 
                                 (40-mean(Abs$HSN1000))/sd(Abs$HSN1000), 
-                                ((50-mean(Abs$HSN1000))/sd(Abs$HSN1000))),
-                     labels = c(30, 40, 50)
+                                (50-mean(Abs$HSN1000))/sd(Abs$HSN1000), 
+                                ((60-mean(Abs$HSN1000))/sd(Abs$HSN1000))),
+                     labels = c(30, 40, 50, 60)
   )+
   xlab("Landscape complexity (%)")+
   ggtitle("")+
   theme_bw()+
   theme(legend.position = "right",
         legend.text = element_text(size = sizelegend),
-        legend.title = element_text(size = sizetext),
+        legend.title = element_blank(),
         axis.text.y=element_text(face = "bold", size = sizelegend),
         axis.text.x=element_text(face = "bold", size = sizelegend),
         axis.title.y = element_text(size=sizetext, face = "bold"),
@@ -249,11 +311,11 @@ Fig2C <- plot_model(modFullPred, type = "pred", terms = c("Ldscp [all]","Treatme
 
 # save a png with high res
 ppi <- 300# final: 600 # resolution
-w <- 20 # width in cm
+w <- 25 # width in cm
 
 png("Figures/Fig2.png",
     width=w,
-    height=w/3,
+    height=w/2.5,
     units = "cm",
     res=ppi)
 
@@ -264,25 +326,7 @@ dev.off()
 
 
 
-## Prototype de figure améliorée (montrer les moyennes): il faut pour ca passer en ggeffects, sjplot ne le fait pas
-library(ggeffects)
 
-# get the predictions with ggeffects
-me <- ggpredict(modFullPred, c("Ldscp [all]", "Treatment"))
-# take the raw data from ggeffects and compute means and sds
-raw <- attr(me, "rawdata")
-raw2 <- raw %>% group_by(x, group) %>% summarize(response = mean(response), sdev = sd(response))
-
-ggplot(me, aes(x = x, y = predicted, colour = group)) +
-  geom_line(size = 3)+
-  geom_ribbon(aes(ymin = conf.low, ymax = conf.high), alpha = 0.3)+
-  geom_jitter(data = raw, mapping = aes(x = x, y = response), colour = "gray")+
-  # using jitter for observations here
-  geom_point(data = raw2, mapping = aes(x = x, y = response, colour = group), 
-             size = 4)
-
-
-  
 
 
 
