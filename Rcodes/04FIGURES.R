@@ -186,8 +186,14 @@ sizelegend <- 7
 Fig2A <- plot_model(modFullAb, type = "pred", terms = c("Ldscp [all]","Treatment"),
            colors = mycols, dot.size = 1.5, line.size = 1, 
            show.data = TRUE)+
+  scale_x_continuous(breaks = c((30-mean(Abs$HSN1000))/sd(Abs$HSN1000), 
+                                (40-mean(Abs$HSN1000))/sd(Abs$HSN1000), 
+                                ((50-mean(Abs$HSN1000))/sd(Abs$HSN1000))),
+                     labels = c(30, 40, 50)
+  )+
+  xlab("Landscape complexity (%)")+
   ylab("Abundance (individuals)")+
-  xlab("Landscape complexity (scaled)")+
+  
   ggtitle("")+
   theme_bw()+
   theme(legend.position = "none",
@@ -202,7 +208,12 @@ Fig2B <-plot_model(modFullDiv, type = "pred", terms = c("Ldscp [all]","Treatment
                     colors = mycols, dot.size = 1.5,line.size = 1,
                     show.data = TRUE)+
   ylab("Taxonomic richness (taxa)")+
-  xlab("Landscape complexity (scaled)")+
+  scale_x_continuous(breaks = c((30-mean(Abs$HSN1000))/sd(Abs$HSN1000), 
+                                (40-mean(Abs$HSN1000))/sd(Abs$HSN1000), 
+                                ((50-mean(Abs$HSN1000))/sd(Abs$HSN1000))),
+                     labels = c(30, 40, 50)
+  )+
+  xlab("Landscape complexity (%)")+
   
   ggtitle("")+
   theme_bw()+
@@ -217,8 +228,13 @@ Fig2B <-plot_model(modFullDiv, type = "pred", terms = c("Ldscp [all]","Treatment
 Fig2C <- plot_model(modFullPred, type = "pred", terms = c("Ldscp [all]","Treatment"),
                     colors = mycols, dot.size = 1.5,line.size = 1,
                     show.data = TRUE)+
-  ylab("Predation rates (eggs predated)")+
-  xlab("Landscape complexity (scaled)")+
+  ylab("Predation (eggs predated)")+
+  scale_x_continuous(breaks = c((30-mean(Abs$HSN1000))/sd(Abs$HSN1000), 
+                                (40-mean(Abs$HSN1000))/sd(Abs$HSN1000), 
+                                ((50-mean(Abs$HSN1000))/sd(Abs$HSN1000))),
+                     labels = c(30, 40, 50)
+  )+
+  xlab("Landscape complexity (%)")+
   ggtitle("")+
   theme_bw()+
   theme(legend.position = "right",
@@ -245,6 +261,29 @@ Fig2A+labs(tag = "A")+
   Fig2B+labs(tag = "B")+
   Fig2C+labs(tag = "C")
 dev.off()
+
+
+
+## Prototype de figure améliorée (montrer les moyennes): il faut pour ca passer en ggeffects, sjplot ne le fait pas
+library(ggeffects)
+
+# get the predictions with ggeffects
+me <- ggpredict(modFullPred, c("Ldscp [all]", "Treatment"))
+# take the raw data from ggeffects and compute means and sds
+raw <- attr(me, "rawdata")
+raw2 <- raw %>% group_by(x, group) %>% summarize(response = mean(response), sdev = sd(response))
+
+ggplot(me, aes(x = x, y = predicted, colour = group)) +
+  geom_line(size = 3)+
+  geom_ribbon(aes(ymin = conf.low, ymax = conf.high), alpha = 0.3)+
+  geom_jitter(data = raw, mapping = aes(x = x, y = response), colour = "gray")+
+  # using jitter for observations here
+  geom_point(data = raw2, mapping = aes(x = x, y = response, colour = group), 
+             size = 4)
+
+
+  
+
 
 
 
