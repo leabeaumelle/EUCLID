@@ -69,7 +69,7 @@ write.csv(data.frame(Anova(modFullDiv)), "Tables/ANOVAmodFullDiv.csv")
 write.csv(data.frame(Anova(modFullPred)), "Tables/ANOVAmodFullPred.csv")
 
 ## Models ---------------------------------------------------------------------
-tab_model(modFullAb, modFullDiv, modFullPred)
-tab_model(modPred)
+tab_model(modFullAb, modFullDiv, modFullPred, file = "Tables/ModelResults.html")
+
 
 
