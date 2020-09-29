@@ -7,6 +7,8 @@ library(dplyr)
 library(ggplot2)
 library(patchwork)
 library(car)
+library(sjplot)
+library(lme4)
 
 ## Data----------------------------------------------------------------------------
 Abundance <- read.csv("Output/AbundanceClean.csv")
@@ -55,14 +57,19 @@ modFullDiv <- readRDS(file = "Output/NEDiversity_FullModel.rds")
 modFullPred <- readRDS(file = "Output/PredRate_FullModel.rds")
 
 
-## Make Table ---------------------------------------------------------------------------
+## ANOVAs ---------------------------------------------------------------------------
 Anova(modFullAb)
 Anova(modFullDiv)
 Anova(modFullPred)
 
 
-ColumnsT1 <- c("Variable", "Predictor", "Chi-sq", "df", "p-value")
-
-
 ## Store final table in Table folder----------------------------------------------------
-write.csv(Table1, "Tables/Table1.csv")
+write.csv(data.frame(Anova(modFullAb)), "Tables/ANOVAmodFullAb.csv")
+write.csv(data.frame(Anova(modFullDiv)), "Tables/ANOVAmodFullDiv.csv")
+write.csv(data.frame(Anova(modFullPred)), "Tables/ANOVAmodFullPred.csv")
+
+## Models ---------------------------------------------------------------------
+tab_model(modFullAb, modFullDiv, modFullPred)
+tab_model(modPred)
+
+

@@ -324,8 +324,10 @@ Fig2A+labs(tag = "A")+
   Fig2C+labs(tag = "C")
 dev.off()
 
-
-
+# Get sample sizes for the caption
+Abs %>% group_by(Treatment, HSN1000) %>% summarize(n())
+Div %>% group_by(Treatment, HSN1000) %>% summarize(n())
+Pred_sc %>% group_by(Treatment, HSN1000) %>% summarize(n())
 
 
 
