@@ -21,6 +21,9 @@ Pred <- read.csv("Output/PredationPest_clean.csv")
 
 # Panel A - Flower strips increase the abundance of natural enemies
 
+# remove vegetation guild abundances
+Abundance <- Abundance[Abundance$Guild != "Vegetation",]
+
 # reorder levels of treatment
 Abundance$Treatment <- relevel(Abundance$Treatment, ref = "Low Div")
 
@@ -47,6 +50,9 @@ Abundance %>% filter(!is.na(Total)) %>% group_by(Treatment) %>% summarize(n())
 
 # Panel B - Flower strips don't change the diversity of natural enemies (genus richness)
 
+# remove vegetation guild abundances
+Diversity <- Diversity[Diversity$Guild != "Vegetation",]
+
 # reorder levels of treatment
 Diversity$Treatment <- relevel(Diversity$Treatment, ref = "Low Div")
 
@@ -54,7 +60,7 @@ Diversity$Treatment <- relevel(Diversity$Treatment, ref = "Low Div")
 sizetext <- 10
 sizelegend <- 8
 
-F2A <- ggplot(data = Diversity[!is.na(Diversity$GenusR),], aes(y=GenusR, x=Treatment, fill = Treatment))+
+F2A <- ggplot(data = Diversity[!is.na(Diversity$TaxaR),], aes(y=TaxaR, x=Treatment, fill = Treatment))+
   geom_boxplot()+
   geom_jitter(width = .25, alpha = .4, size = 0.4)+
   scale_fill_viridis_d(begin = 0.5)+
@@ -69,7 +75,7 @@ F2A <- ggplot(data = Diversity[!is.na(Diversity$GenusR),], aes(y=GenusR, x=Treat
 F2A
 
 # Sample sizes
-Diversity %>% filter(!is.na(GenusR)) %>% group_by(Treatment) %>% summarize(n())
+Diversity %>% filter(!is.na(TaxaR)) %>% group_by(Treatment) %>% summarize(n())
 
 
 # Panel C - Flower strips effect on predation depends on the landscape
