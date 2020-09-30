@@ -337,6 +337,113 @@ Div %>% group_by(Treatment, HSN1000) %>% summarize(n())
 Pred_sc %>% group_by(Treatment, HSN1000) %>% summarize(n())
 
 
+## Testing new figure 1 showing different guilds
+## Data----------------------------------------------------------------------------
+Abundance <- read.csv("Output/AbundanceClean.csv")
+Diversity <- read.csv("Output/DiversityClean.csv")
+Pred <- read.csv("Output/PredationPest_clean.csv")
 
-## Figure 2 - response of different guilds at different distances of flower strips
-# three to nine panels showing how response depends on community type and distance to strip
+
+## Figure 1 - overall effect of flower strips on natural enemies and predation------------
+# three panels with overall flower strip effect across landscapes and communitiy types
+
+# Panel A - Flower strips increase the abundance of natural enemies
+
+# remove vegetation guild abundances
+Abundance <- Abundance[Abundance$Guild != "Vegetation",]
+
+# reorder levels of treatment
+Abundance$Treatment <- relevel(Abundance$Treatment, ref = "Low Div")
+
+# set sizes of text in plots
+sizetext <- 10
+sizelegend <- 8
+
+F1A <- ggplot(data = Abundance, aes(y=Total, x=Guild, fill = Treatment))+
+  geom_boxplot()+
+  stat_summary(fun="mean", position = position_dodge(width = 0.75), geom = "point", colour = "red")+
+  geom_point(position = position_jitterdodge(dodge.width = 0.75), alpha = .4, size = 0.5)+
+  scale_fill_viridis_d(begin = 0.5)+
+  # scale_fill_manual(values = c(pal[2], pal[3]))+
+  ylab("Natural enemies abundance")+
+  theme_bw()+
+  theme(legend.position = "none", 
+        axis.text.y=element_text(face = "bold", size = sizelegend),
+        axis.text.x=element_text(size = sizetext),
+        axis.title.y = element_text(size=sizetext, face = "bold"),
+        axis.title.x = element_blank())
+F1A
+
+# Sample sizes
+Abundance %>% filter(!is.na(Total)) %>% group_by(Treatment, Guild) %>% summarize(n())
+
+# Panel B - Flower strips don't change the diversity of natural enemies (genus richness)
+
+# remove vegetation guild abundances
+Diversity <- Diversity[Diversity$Guild != "Vegetation",]
+
+# reorder levels of treatment
+Diversity$Treatment <- relevel(Diversity$Treatment, ref = "Low Div")
+
+# set sizes of text in plots
+sizetext <- 10
+sizelegend <- 8
+
+F2A <- ggplot(data = Diversity[!is.na(Diversity$TaxaR),], aes(y=TaxaR, x=Guild, fill = Treatment))+
+  geom_boxplot()+
+  stat_summary(fun="mean", position = position_dodge(width = 0.75), colour = "red")+
+  geom_point(position = position_jitterdodge(jitter.height = .05), alpha = .4, size = 0.5)+
+  scale_fill_viridis_d(begin = 0.5)+
+  # scale_fill_manual(values = c(pal[2], pal[3]))+
+  ylab("Natural enemies taxa richness")+
+  theme_bw()+
+  theme(legend.position = "none", 
+        axis.text.y=element_text(face = "bold", size = sizelegend),
+        axis.text.x=element_text(size = sizetext),
+        axis.title.y = element_text(size=sizetext, face = "bold"),
+        axis.title.x = element_blank())
+F2A
+
+# Sample sizes
+Diversity %>% filter(!is.na(TaxaR)) %>% group_by(Treatment, Guild) %>% summarize(n())
+
+
+# Panel C - Flower strips effect on predation depends on the landscape
+
+# reorder levels of treatment
+Pred$Treatment <- relevel(Pred$Treatment, ref = "Low Div")
+
+# set sizes of text in plots
+sizetext <- 10
+sizelegend <- 8
+
+F2C <- ggplot(data = Pred[!is.na(Pred$PredRate),], aes(y=PredRate, x=Treatment, fill = Treatment))+
+  geom_boxplot()+
+  geom_point(position = position_jitterdodge(jitter.width = 0.95, jitter.height = 0.01), alpha = .4, size = 0.5)+
+  stat_summary(fun="mean", position = position_dodge(width = 0.75), colour = "red", size = 0.7, shape = 16)+
+  scale_fill_viridis_d(begin = 0.5)+
+  ylab("Predation Rates")+
+  theme_bw()+
+  theme(legend.position = "none", 
+        axis.text.y=element_text(face = "bold", size = sizelegend),
+        axis.text.x=element_text(size = sizetext),
+        axis.title.y = element_text(size=sizetext, face = "bold"),
+        axis.title.x = element_blank())
+F2C
+
+# Sample sizes
+Pred %>% filter(!is.na(PredRate)) %>% group_by(Treatment) %>% summarize(n())
+
+# save a png with high res
+ppi <- 300# final: 600 # resolution
+w <- 20 # width in cm
+
+png("Figures/Fig1_guilds.png",
+    width=w,
+    height=w/3,
+    units = "cm",
+    res=ppi)
+
+F1A+F2A+F2C
+
+dev.off()
