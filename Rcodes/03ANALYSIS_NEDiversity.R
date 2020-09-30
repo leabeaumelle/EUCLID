@@ -357,7 +357,10 @@ Anova(modopt_taxar)
 Anova(mod2b_taxar)
 
 
-# Save results of LRTs-------
+# Results ---------------
 
+modFull <- readRDS("Output/NEDiversity_FullModel.rds")
+library(ggeffects)
 
-
+# predictions of average richess for the two guilds
+ggemmeans(modFull, terms = "Guild")
