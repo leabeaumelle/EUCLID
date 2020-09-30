@@ -56,6 +56,27 @@ Locations <- Locations[, c("x", "y", "Site", "Treatment")]
 
 Abs <- left_join(Abs, Locations, by = c("Site", "Treatment"))
 
+# Taxa list
+TaxaList <- read.csv("Output/NatEnemies_raw.csv")
+
+
+
+# Data description-----------------------------------------------------------
+# total individuals collected
+sum(Abundance$Total)
+sum(Abundance$Total[Abundance$Guild != "Vegetation"])
+
+# frequency of different groups
+TaxaList %>% group_by(order) %>% summarize(100*sum(eff, na.rm = TRUE)/5487)
+
+TaxaList %>% filter(piege != "F") %>% group_by(order) %>% summarize(100*sum(eff, na.rm = TRUE)/5148)
+TaxaList %>% filter(piege != "F") %>% group_by(order) %>% summarize(sum(eff, na.rm = TRUE))
+
+# total number of taxonomic groups
+TaxaList %>% filter(piege !="F") %>% group_by(order, taxon) %>% summarize(n())
+
+
+
 ## Data exploration----------------------------------------------------------
 summary(Abundance$Total)
 

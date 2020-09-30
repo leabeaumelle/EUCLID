@@ -183,7 +183,7 @@ JustGenus <- subset(GenusList_wide,
 # richness calculation
 GenusList_wide$GR <- specnumber(JustGenus)
 
-## Tableau pour RDA avec landscape
+## Save a table with the taxa list for the RDA analysis-------
 Ldscp <- read.csv("Output/Landscapevars.csv")
 Ldscp$Site <- as.factor(as.character(Ldscp$couple))
 Ldscp$Ldscp <- Ldscp$HSN1000
