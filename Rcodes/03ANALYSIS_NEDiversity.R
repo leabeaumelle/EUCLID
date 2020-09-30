@@ -48,6 +48,14 @@ Div[,numcols] <- scale(Div[,numcols])
 # Remove vegetation guild data
 Div <- droplevels(Div[Div$Guild != "Vegetation",])
 
+# GPS location of the sites
+Locations <- read.csv("Data/EUCLID - Parcelles.csv")
+Locations$Site <- factor(rep(1:12, each = 2))
+Locations$Treatment <- rep(c("Low Div", "High Div"), 12)
+Locations <- Locations[, c("x", "y", "Site", "Treatment")]
+
+Div <- left_join(Div, Locations, by = c("Site", "Treatment"))
+
 
 ## 1. Data exploration-----------------------
 
@@ -258,6 +266,10 @@ plotResiduals(res2b, Div$Guild, main = "Guild")
 plotResiduals(res2b, Div$Treatment, main = "Treatment")
 plotResiduals(res2b, Div$Distance,  main = "Distance")
 par(mfrow = c(1,1))
+
+# Spatial autocorrelation ? 
+plotResiduals(res2b$scaledResiduals, Abs$x)
+plotResiduals(res2b$scaledResiduals, Abs$y)
 
 # residuals are uniform, and have homogeneous variance, no pattern with landscape and other covariates
 

@@ -41,6 +41,14 @@ Pred_sc <- Pred
 Pred_sc[,numcols] <- scale(Pred[,numcols])
 Pred_sc$PredatedEggs <- Pred_sc$PredRate*10
 
+# GPS location of the sites
+Locations <- read.csv("Data/EUCLID - Parcelles.csv")
+Locations$Site <- factor(rep(1:12, each = 2))
+Locations$Treatment <- rep(c("Low Div", "High Div"), 12)
+Locations <- Locations[, c("x", "y", "Site", "Treatment")]
+
+Pred_sc <- left_join(Pred_sc, Locations, by = c("Site", "Treatment"))
+
 ## Data exploration---------------------------------------------------------------------------
 
 summary(Pred)
@@ -125,7 +133,7 @@ plotResiduals(res3, Pred_sc$Treatment[!is.na(Pred_sc$PredRate)], main = "Treatme
 plotResiduals(res3, Pred_sc$Distance[!is.na(Pred_sc$PredRate)],  main = "Distance")
 par(op)
 
-# patterns with landscape detetcted
+# patterns with landscape detected
 
 ## full model 4: try non linear landscape effects
 modFull4 <- glmer.nb(PredatedEggs ~ poly(Ldscp, 2)*Treatment + Treatment*Distance + (1|Site:Session),
@@ -144,6 +152,9 @@ par(op)
 
 # Model with negative binomial and polynomial 2 effect landscape is the best so far
 
+# Spatial autocorrelation ? 
+plotResiduals(res4$scaledResiduals, Pred_sc$x[!is.na(Pred_sc$PredRate)])
+plotResiduals(res4$scaledResiduals, Pred_sc$y[!is.na(Pred_sc$PredRate)])
 
 
 ## Save Full model results-------

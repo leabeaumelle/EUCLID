@@ -48,6 +48,13 @@ Abs[,numcols] <- scale(Abs[,numcols])
 # Remove vegetation guild data to fit models
 Abs <- droplevels(Abs[Abs$Guild != "Vegetation",])
 
+# GPS location of the sites
+Locations <- read.csv("Data/EUCLID - Parcelles.csv")
+Locations$Site <- factor(rep(1:12, each = 2))
+Locations$Treatment <- rep(c("Low Div", "High Div"), 12)
+Locations <- Locations[, c("x", "y", "Site", "Treatment")]
+
+Abs <- left_join(Abs, Locations, by = c("Site", "Treatment"))
 
 ## Data exploration----------------------------------------------------------
 summary(Abundance$Total)
@@ -160,6 +167,10 @@ plotResiduals(res$scaledResiduals, Abs$Treatment,  main = "Treatment")
 plotResiduals(res$scaledResiduals, Abs$Distance,  main = "Distance")
 par(mfrow = c(1,1))
 
+# Spatial autocorrelation ? 
+plotResiduals(res$scaledResiduals, Abs$x)
+plotResiduals(res$scaledResiduals, Abs$y)
+
 ## Non linear effect of the landscape ameliorate model residuals and is significant according
 # to ANOVA: new full model
 
@@ -249,7 +260,7 @@ plot_model(modOpt, type = "pred", terms = c("Distance [all]", "Guild"))
 
 saveRDS(modOpt, file = "Output/NEAbundance_OptimalModel.rds")
 
-# How many more individuals between treatments on average? 
+# How many more individuals between treatments on average? ---
 
 modOpt <- readRDS(file = "Output/NEAbundance_OptimalModel.rds")
 modFull <- readRDS(file = "Output/NEAbundance_FullModel.rds")
