@@ -65,7 +65,7 @@ F2A <- ggplot(data = Diversity[!is.na(Diversity$TaxaR),], aes(y=TaxaR, x=Treatme
   geom_jitter(width = .25, alpha = .4, size = 0.4)+
   scale_fill_viridis_d(begin = 0.5)+
   # scale_fill_manual(values = c(pal[2], pal[3]))+
-  ylab("Natural enemies genus richness")+
+  ylab("Natural enemies taxa richness")+
   theme_bw()+
   theme(legend.position = "none", 
         axis.text.y=element_text(face = "bold", size = sizelegend),
@@ -336,8 +336,153 @@ Div %>% group_by(Treatment, HSN1000) %>% summarize(n())
 Pred_sc %>% group_by(Treatment, HSN1000) %>% summarize(n())
 
 
+# testing a fig without the raw data: -----
+
+# set sizes of text in plots
+sizetext <- 10
+sizelegend <- 9
+#colours
+mycols <- c("#F2DA02",scales::viridis_pal(begin = 0.5)(2)[1])
+
+
+# PANEL ABUNDANCE
+
+# get the predictions with ggeffects
+me <- ggemmeans(modFullAb, c("Ldscp [all]", "Treatment"))
+# take the raw data from ggeffects and compute means and sds
+raw <- attr(me, "rawdata")
+raw2 <- raw %>% group_by(x, group) %>% summarise(means = mean(response, na.rm = TRUE), 
+                                                 sdev = sd(response, na.rm = TRUE))
 
 
 
+Fig2A <- ggplot(me, aes(x = x, y = predicted, colour = group), col = mycols) +
+  geom_line(size = 1)+
+  geom_errorbar(data = raw2, mapping = aes(x = x, y = means, ymin=means-sdev, ymax = means+sdev, group = group), colour = "black", 
+                width = 0.1, position = position_dodge(width = 0.1), size = 0.1)+
+  geom_point(data = raw2, mapping = aes(x = x, y = means, fill = group, shape = group), 
+             size = 2.2, colour = "black", position = position_dodge(width = 0.1))+
+  scale_fill_manual(values=mycols)+
+  scale_colour_manual(values=mycols)+
+  scale_shape_manual(values = c(21,24))+
+  geom_ribbon(inherit.aes = FALSE, 
+              mapping = aes(x = x, y = predicted, group = group, fill = group,
+                            ymin = conf.low, ymax = conf.high), alpha = 0.15)+
+  # using jitter for observations here
+  # scale_fill_manual(values=mycols)+
+  ylab("Abundance (individuals)")+
+  scale_x_continuous(breaks = c((30-mean(Abs$HSN1000))/sd(Abs$HSN1000), 
+                                (40-mean(Abs$HSN1000))/sd(Abs$HSN1000), 
+                                (50-mean(Abs$HSN1000))/sd(Abs$HSN1000), 
+                                ((60-mean(Abs$HSN1000))/sd(Abs$HSN1000))),
+                     labels = c(30, 40, 50, 60)
+  )+
+  xlab("Landscape complexity (%)")+
+  ggtitle("")+
+  theme_bw()+
+  theme(legend.position = "none",
+        legend.text = element_text(size = sizelegend),
+        legend.title = element_blank(),
+        axis.text.y=element_text(face = "bold", size = sizelegend),
+        axis.text.x=element_text(face = "bold", size = sizelegend),
+        axis.title.y = element_text(size=sizetext, face = "bold"),
+        axis.title.x = element_text(size=sizetext, face = "bold"))
+
+# PANEL RICHNESS
+
+# get the predictions with ggeffects
+me <- ggemmeans(modFullDiv, c("Ldscp [all]", "Treatment"))
+# take the raw data from ggeffects and compute means and sds
+raw <- attr(me, "rawdata")
+raw2 <- raw %>% group_by(x, group) %>% summarise(means = mean(response, na.rm = TRUE), 
+                                                 sdev = sd(response, na.rm = TRUE))
+
+Fig2B <- ggplot(me, aes(x = x, y = predicted, colour = group), col = mycols) +
+  geom_line(size = 1, linetype = 2)+
+  geom_errorbar(data = raw2, mapping = aes(x = x, y = means, ymin=means-sdev, ymax = means+sdev, group = group), colour = "black", 
+                width = 0.1, position = position_dodge(width = 0.1), size = 0.1)+
+  geom_point(data = raw2, mapping = aes(x = x, y = means, fill = group, shape = group), 
+             size = 2.2, colour = "black", position = position_dodge(width = 0.1))+
+  scale_fill_manual(values=mycols)+
+  scale_colour_manual(values=mycols)+
+  scale_shape_manual(values = c(21,24))+
+  geom_ribbon(inherit.aes = FALSE, 
+              mapping = aes(x = x, y = predicted, group = group, fill = group,
+                            ymin = conf.low, ymax = conf.high), alpha = 0.15)+
+  ylim(c(0,16))+
+  ylab("Taxonomic richness (taxa)")+
+  scale_x_continuous(breaks = c((30-mean(Abs$HSN1000))/sd(Abs$HSN1000), 
+                                (40-mean(Abs$HSN1000))/sd(Abs$HSN1000), 
+                                (50-mean(Abs$HSN1000))/sd(Abs$HSN1000), 
+                                ((60-mean(Abs$HSN1000))/sd(Abs$HSN1000))),
+                     labels = c(30, 40, 50, 60)
+  )+
+  xlab("Landscape complexity (%)")+
+  ggtitle("")+
+  theme_bw()+
+  theme(legend.position = "none",
+        legend.text = element_text(size = sizelegend),
+        legend.title = element_blank(),
+        axis.text.y=element_text(face = "bold", size = sizelegend),
+        axis.text.x=element_text(face = "bold", size = sizelegend),
+        axis.title.y = element_text(size=sizetext, face = "bold"),
+        axis.title.x = element_text(size=sizetext, face = "bold"))
+
+# PANEL PREDATION
+
+# get the predictions with ggeffects
+me <- ggemmeans(modFullPred, c("Ldscp [all]", "Treatment"))
+# take the raw data from ggeffects and compute means and sds
+raw <- attr(me, "rawdata")
+raw2 <- raw %>% group_by(x, group) %>% summarise(means = mean(response, na.rm = TRUE), 
+                                                 sdev = sd(response, na.rm = TRUE))
+
+Fig2C <- ggplot(me, aes(x = x, y = predicted, colour = group), col = mycols) +
+  geom_line(size = 1)+
+  geom_errorbar(data = raw2, mapping = aes(x = x, y = means, ymin=means-sdev, ymax = means+sdev, group = group), colour = "black", 
+                width = 0.1, position = position_dodge(width = 0.1), size = 0.1)+
+  geom_point(data = raw2, mapping = aes(x = x, y = means, fill = group, shape = group), 
+             size = 2.2, colour = "black", position = position_dodge(width = 0.1))+
+  scale_fill_manual(values=mycols)+
+  scale_colour_manual(values=mycols)+
+  scale_shape_manual(values = c(21,24))+
+  geom_ribbon(inherit.aes = FALSE, 
+              mapping = aes(x = x, y = predicted, group = group, fill = group,
+                            ymin = conf.low, ymax = conf.high), alpha = 0.15)+
+  # using jitter for observations here
+  # scale_fill_manual(values=mycols)+
+  ylab("Predation (eggs predated)")+
+  scale_x_continuous(breaks = c((30-mean(Abs$HSN1000))/sd(Abs$HSN1000), 
+                                (40-mean(Abs$HSN1000))/sd(Abs$HSN1000), 
+                                (50-mean(Abs$HSN1000))/sd(Abs$HSN1000), 
+                                ((60-mean(Abs$HSN1000))/sd(Abs$HSN1000))),
+                     labels = c(30, 40, 50, 60)
+  )+
+  xlab("Landscape complexity (%)")+
+  ggtitle("")+
+  theme_bw()+
+  theme(legend.position = "right",
+        legend.text = element_text(size = sizelegend),
+        legend.title = element_blank(),
+        axis.text.y=element_text(face = "bold", size = sizelegend),
+        axis.text.x=element_text(face = "bold", size = sizelegend),
+        axis.title.y = element_text(size=sizetext, face = "bold"),
+        axis.title.x = element_text(size=sizetext, face = "bold"))
+
+
+# save a png with high res
+ppi <- 300# final: 600 # resolution
+w <- 25 # width in cm
+
+png("Figures/Fig2_errorbars.png",
+    width=w,
+    height=w/2.5,
+    units = "cm",
+    res=ppi)
+
+Fig2A+labs(tag = "A")+
+  Fig2B+labs(tag = "B")+
+  Fig2C+labs(tag = "C")
+dev.off()
 ## Figure 2 - response of different guilds at different distances of flower strips
 # three to nine panels showing how response depends on community type and distance to strip
