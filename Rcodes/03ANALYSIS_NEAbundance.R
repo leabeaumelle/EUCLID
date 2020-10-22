@@ -61,6 +61,7 @@ TaxaList <- read.csv("Output/NatEnemies_raw.csv")
 
 
 
+
 # Data description-----------------------------------------------------------
 # total individuals collected
 sum(Abundance$Total)
@@ -72,8 +73,21 @@ TaxaList %>% group_by(order) %>% summarize(100*sum(eff, na.rm = TRUE)/5487)
 TaxaList %>% filter(piege != "F") %>% group_by(order) %>% summarize(100*sum(eff, na.rm = TRUE)/5148)
 TaxaList %>% filter(piege != "F") %>% group_by(order) %>% summarize(sum(eff, na.rm = TRUE))
 
-# total number of taxonomic groups
-TaxaList %>% filter(piege !="F") %>% group_by(order, taxon) %>% summarize(n())
+# freq per guild
+Abundance %>% group_by(Guild) %>% summarise(sum(Total))
+TaxaList %>% filter(piege == "B") %>% group_by(order, piege) %>% summarize(100*sum(eff, na.rm = TRUE)/1497)
+TaxaList %>% filter(piege == "P") %>% group_by(order, piege) %>% summarize(100*sum(eff, na.rm = TRUE)/3651)
+
+
+# total number of taxonomic groups: 198
+nrow(as.data.frame(TaxaList %>% filter(piege !="F") %>% group_by(taxon) %>% summarize(n())))
+
+# total number of taxonomic groups in the soil guild: 152
+nrow(as.data.frame(TaxaList %>% filter(piege =="P") %>% group_by(taxon) %>% summarize(n())))
+
+# total number of taxonomic groups in the vine guild: 86
+nrow(as.data.frame(TaxaList %>% filter(piege =="B") %>% group_by(taxon) %>% summarize(n())))
+
 
 
 
