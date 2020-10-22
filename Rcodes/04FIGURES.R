@@ -33,7 +33,7 @@ sizelegend <- 8
 
 F1A <- ggplot(data = Abundance, aes(y=Total, x=Treatment, fill = Treatment))+
   geom_boxplot()+
-  geom_jitter(width = .25, alpha = .4, size = 0.4)+
+  geom_point(position = position_jitterdodge(jitter.width = 0.7), alpha = .4, size = 0.5)+
   scale_fill_viridis_d(begin = 0.5)+
   # scale_fill_manual(values = c(pal[2], pal[3]))+
   ylab("Natural enemies abundance")+
@@ -62,7 +62,7 @@ sizelegend <- 8
 
 F2A <- ggplot(data = Diversity[!is.na(Diversity$TaxaR),], aes(y=TaxaR, x=Treatment, fill = Treatment))+
   geom_boxplot()+
-  geom_jitter(width = .25, alpha = .4, size = 0.4)+
+  geom_point(position = position_jitterdodge(jitter.width = 0.7), alpha = .4, size = 0.5)+
   scale_fill_viridis_d(begin = 0.5)+
   # scale_fill_manual(values = c(pal[2], pal[3]))+
   ylab("Natural enemies taxa richness")+
@@ -89,7 +89,7 @@ sizelegend <- 8
 
 F2C <- ggplot(data = Pred[!is.na(Pred$PredRate),], aes(y=PredRate, x=Treatment, fill = Treatment))+
   geom_boxplot()+
-  geom_jitter(width = .25, alpha = .4, size = 0.4)+
+  geom_point(position = position_jitterdodge(jitter.width = 0.7), alpha = .4, size = 0.5)+
   scale_fill_viridis_d(begin = 0.5)+
   # scale_fill_manual(values = c(pal[2], pal[3]))+
   ylab("Predation Rates")+
@@ -424,7 +424,7 @@ F2C <- ggplot(data = Pred[!is.na(Pred$PredRate),], aes(y=PredRate, x=Treatment, 
   scale_fill_viridis_d(begin = 0.5)+
   ylab("Predation Rates")+
   theme_bw()+
-  theme(legend.position = "none", 
+  theme(legend.position = "right", 
         axis.text.y=element_text(face = "bold", size = sizelegend),
         axis.text.x=element_text(size = sizetext),
         axis.title.y = element_text(size=sizetext, face = "bold"),
