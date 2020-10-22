@@ -7,7 +7,7 @@ library(dplyr)
 library(ggplot2)
 library(patchwork)
 library(car)
-library(sjplot)
+library(sjPlot)
 library(lme4)
 
 ## Data----------------------------------------------------------------------------
@@ -69,6 +69,7 @@ write.csv(data.frame(Anova(modFullDiv)), "Tables/ANOVAmodFullDiv.csv")
 write.csv(data.frame(Anova(modFullPred)), "Tables/ANOVAmodFullPred.csv")
 
 ## Models ---------------------------------------------------------------------
+# save model results in a html table for supplementary information
 tab_model(modFullAb, modFullDiv, modFullPred, file = "Tables/ModelResults.html")
 
 
