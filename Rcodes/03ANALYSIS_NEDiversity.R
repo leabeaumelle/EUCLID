@@ -268,8 +268,8 @@ plotResiduals(res2b, Div$Distance,  main = "Distance")
 par(mfrow = c(1,1))
 
 # Spatial autocorrelation ? 
-plotResiduals(res2b$scaledResiduals, Abs$x)
-plotResiduals(res2b$scaledResiduals, Abs$y)
+plotResiduals(res2b$scaledResiduals, Div$x)
+plotResiduals(res2b$scaledResiduals, Div$y)
 
 # residuals are uniform, and have homogeneous variance, no pattern with landscape and other covariates
 
