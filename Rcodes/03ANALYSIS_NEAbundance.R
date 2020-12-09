@@ -313,14 +313,19 @@ IndPredsFull <- (ggemmeans(modFull, terms = c("Treatment"))[[2]])
 
 # percent change in high versus low div (average percent for soil and vine)
 (IndPredsFull[1]-IndPredsFull[2])/IndPredsFull[2]
+100*(IndPredsFull[1])/IndPredsFull[2]
      
 # what is intermediate complexityt in the data? 40% SNH
 plot(Abs$HSN1000, Abs$Ldscp)
 
 # by how much distance decreases the abundance of NE?
-IndPredsDist <- ggemmeans(modFull, terms = c("Distance"))[[2]]
+IndPredsDist <- ggemmeans(modFull, terms = "Distance")[[2]]
 (IndPredsDist[1]-IndPredsDist[3])/IndPredsDist[3]
+100*(IndPredsDist[3])/IndPredsDist[1]
 
 
+# abobve no longer working...
+IndPredDist <- ggemmeans(modOpt, terms = c("Treatment", "Distance"))[[2]]
+100-(100*mean(IndPredDist[3]/IndPredDist[1], IndPredDist[6]/IndPredDist[4]))
 
 ## TO DO: remove distance data and look how vine, soil and vegetation guilds are affected by the treatment locally

@@ -212,3 +212,35 @@ F1A+F2A+F2C
 
 dev.off()
 
+
+## Ladnscape gradient across sites
+Plot_df <- Ldscp[, names(Ldscp) %in% c("couple", "HSN1000")] %>% 
+  rename("Lscp" = HSN1000, Sites = "couple")
+Plot_df$Site <- as.factor(Plot_df$Site)
+
+Plot_df2 <- droplevels(semi_join(Plot_df, Abundance, by = c("Site")))
+
+Plot_df2$Sites = with(Plot_df2, reorder(Sites, Lscp, median))
+p<-Plot_df2 %>% 
+  ggplot(aes(x=Sites, y=Lscp, fill = Sites))+
+  geom_point(size = 3)+
+  geom_step()+
+  ylab(expression(atop("Landscape complexity", paste("% semi-natural habitats"))))+
+  ylim(c(0,100))+
+  
+  theme_bw()+
+  theme(legend.position = "none", 
+        axis.text.x = element_blank())
+
+# save a png with high res
+ppi <- 250# final: 600 # resolution
+w <- 10 # width in cm
+
+png("Figures/LandscapeGradient.png",
+    width=w,
+    height=w*0.8,
+    units = "cm",
+    res=ppi)
+
+p
+dev.off()

@@ -114,7 +114,9 @@ png("Figures/Fig1.png",
     units = "cm",
     res=ppi)
 
-F1A+F2A+F2C
+F1A+labs(tag = "A")+
+  F2A+labs(tag = "B")+
+  F2C+labs(tag = "C")
 
 dev.off()
 
