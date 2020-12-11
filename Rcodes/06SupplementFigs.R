@@ -30,6 +30,11 @@ Pred <- left_join(Pred, Ldscp, by = "Site")
 Pred$Site <- as.factor(as.character(Pred$Site))
 Pred$Session <- as.factor(as.character(Pred$Session))
 
+# remove vegetation guild abundances
+Abundance <- Abundance[Abundance$Guild != "Vegetation",]
+
+# remove vegetation guild abundances
+Diversity <- Diversity[Diversity$Guild != "Vegetation",]
 
 # Rescale and center continuous predictors: landscape and distance variables
 numcols <- grep("Ldscp|Dist",names(Abundance))
@@ -43,6 +48,8 @@ Div[,numcols] <- scale(Div[,numcols])
 numcols <- grep("Ldscp|Dist",names(Pred))
 Pred_sc <- Pred
 Pred_sc[,numcols] <- scale(Pred[,numcols])
+
+
 
 # Load model results from scripts 03_
 modAb <- readRDS(file = "Output/NEAbundance_OptimalModel.rds")
@@ -65,7 +72,7 @@ sizetext <- 8
 sizelegend <- 7
 
 # Make plot
-FigS1 <- plot_model(modFullAb, type = "pred", terms = c("Distance"),
+FigS1 <- plot_model(modAb, type = "pred", terms = c("Distance[all]"),
                     colors = mycols, dot.size = 1.5, line.size = 1, 
                     show.data = TRUE)+
     scale_x_continuous(breaks = c(-1.0319298, 0.1670744, 1.3660785),
@@ -97,6 +104,8 @@ png("Figures/FigSupp_DistanceAbd.png",
 FigS1
 dev.off()
 
+# for caption: 
+summary(modAb)
 
 
 
