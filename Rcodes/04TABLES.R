@@ -33,6 +33,11 @@ Pred <- left_join(Pred, Ldscp, by = "Site")
 Pred$Site <- as.factor(as.character(Pred$Site))
 Pred$Session <- as.factor(as.character(Pred$Session))
 
+# remove vegetation guild abundances
+Abundance <- Abundance[Abundance$Guild != "Vegetation",]
+
+# remove vegetation guild abundances
+Diversity <- Diversity[Diversity$Guild != "Vegetation",]
 
 # Rescale and center continuous predictors: landscape and distance variables
 numcols <- grep("Ldscp|Dist",names(Abundance))
