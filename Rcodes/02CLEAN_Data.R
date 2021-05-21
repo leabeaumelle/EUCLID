@@ -211,6 +211,7 @@ GnDf <- subset(GenusList_wide,
 DivDf <- left_join(DivDf, GnDf, by = WhichSampleID)
 
 ## add abundance data
+Abundance$session <- as.factor(Abundance$session)
 Diversity <- left_join(DivDf, Abundance, by = WhichSampleID)
 head(Diversity)
 summary(Diversity) # many NAs

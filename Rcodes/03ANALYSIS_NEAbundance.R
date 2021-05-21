@@ -90,7 +90,6 @@ nrow(as.data.frame(TaxaList %>% filter(piege =="B") %>% group_by(taxon) %>% summ
 
 
 
-
 ## Data exploration----------------------------------------------------------
 summary(Abundance$Total)
 
@@ -329,3 +328,14 @@ IndPredDist <- ggemmeans(modOpt, terms = c("Treatment", "Distance"))[[2]]
 100-(100*mean(IndPredDist[3]/IndPredDist[1], IndPredDist[6]/IndPredDist[4]))
 
 ## TO DO: remove distance data and look how vine, soil and vegetation guilds are affected by the treatment locally
+
+## Revisions -----------------------------------------
+
+# R1: add a table with mean/variance per group of natural enemy
+# mean, sd and total abundances
+TaxaList %>% 
+  filter(piege != "F") %>% 
+  group_by(order, bande) %>% 
+  summarize(MeanAbdc = mean(eff, na.rm = TRUE),
+            SDAbdc = sd(eff, na.rm = TRUE),
+            TotalAbdc = sum(eff, na.rm = TRUE))

@@ -207,6 +207,48 @@ plot_model(modOpt, type = "pred", terms = c("Ldscp [all]"))
 plot_model(modOpt, type = "pred", terms = c("Treatment"))
 
 
+## Revisions -------------------
+
+# R2: effect sizes seem small: is it relevant to farmers? 
+
+# Calculate effect sizes for each landscape based on model predictions
+library(ggeffects)
+library(dplyr)
+
+## Data
+Pred <- read.csv("Output/PredationPest_clean.csv")
+Ldscp <- read.csv("Output/Landscapevars.csv")
+Ldscp$Site <- as.factor(as.character(Ldscp$couple))
+Ldscp$Ldscp <- Ldscp$HSN1000
+
+Pred$Site <- as.factor(as.character(Pred$Site))
+Pred <- left_join(Pred, Ldscp, by = "Site")
+Pred$Site <- as.factor(as.character(Pred$Site))
+Pred$Session <- as.factor(as.character(Pred$Session))
 
 
+# Rescale and center continuous predictors: landscape and distance variables
+numcols <- grep("Ldscp|Dist",names(Pred))
+Pred_sc <- Pred
+Pred_sc[,numcols] <- scale(Pred[,numcols])
+Pred_sc$PredatedEggs <- Pred_sc$PredRate*10
 
+# Load model results from scripts 03_
+modPred <- readRDS(file = "Output/PredRate_OptimalModel.rds")
+modFullPred <- readRDS(file = "Output/PredRate_FullModel.rds")
+
+
+# get the predictions with ggeffects
+me <- ggemmeans(modFullPred, c("Ldscp [all]", "Treatment"))
+
+# take the raw data from ggeffects and compute means and sds
+raw <- attr(me, "rawdata")
+raw2 <- raw %>% group_by(x, group) %>% summarise(means = mean(response, na.rm = TRUE), 
+                                                 sdev = sd(response, na.rm = TRUE))
+
+
+# effect sizes (LRR): 
+LRR <- log(raw2$means[raw2$group=="High Div"]/raw2$means[raw2$group=="Low Div"])
+
+# in percent change: 
+PercentChange <- 100 * (exp(LRR) - 1)
