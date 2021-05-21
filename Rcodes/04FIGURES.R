@@ -9,6 +9,8 @@ library(patchwork)
 library(viridis)
 library(sjPlot)
 library(ggeffects)
+library(ggrepel)
+library(vegan)
 
 ## Data----------------------------------------------------------------------------
 Abundance <- read.csv("Output/AbundanceClean.csv")
@@ -105,7 +107,7 @@ F2C
 Pred %>% filter(!is.na(PredRate)) %>% group_by(Treatment) %>% summarize(n())
 
 # save a png with high res
-ppi <- 300# final: 600 # resolution
+ppi <- 600# final: 600 # resolution
 w <- 20 # width in cm
 
 png("Figures/Fig1.png",
@@ -319,7 +321,7 @@ Fig2C <- ggplot(me, aes(x = x, y = predicted, colour = group), col = mycols) +
 
 
 # save a png with high res
-ppi <- 300# final: 600 # resolution
+ppi <- 600# final: 600 # resolution
 w <- 25 # width in cm
 
 png("Figures/Fig2.png",
@@ -337,3 +339,189 @@ dev.off()
 Abs %>% group_by(Treatment, HSN1000) %>% summarize(n())
 Div %>% group_by(Treatment, HSN1000) %>% summarize(n())
 Pred_sc %>% group_by(Treatment, HSN1000) %>% summarize(n())
+
+
+## Figure 3 - RDA-----------------
+set.seed(123)
+
+#Data updated
+EUCLID2<-read.csv('Output/TaxaList_forAdrien.csv',sep=",",header=TRUE)
+head(EUCLID2)
+
+
+### pool of all sessions
+attach(EUCLID2)
+EUCLID2_pool <- EUCLID2 %>% group_by(Site, Treatment, Guild, Distance,HSN1000) %>%
+  summarise_if(is.integer,sum) %>% ungroup()
+
+
+names(EUCLID2_pool)
+EUCLID2_ENV<-select(EUCLID2_pool,Site,Treatment,Guild,Distance,HSN1000)
+
+EUCLID2_ENV$Treatment=as.factor(EUCLID2_ENV$Treatment)
+
+
+## Community table
+EUCLI_COM<-EUCLID2_pool[,c(8:211)]
+
+# View(EUCLI_COM)
+# rowSums(EUCLI_COM)
+# EUCLID2[c(213,214),]
+
+### Hellinger transf
+EUCLI_COM_HEL<-decostand(EUCLI_COM,"hellinger")
+
+
+######## RDA on pooled session
+modpool <- rda(EUCLI_COM_HEL ~ Treatment*Guild*HSN1000+ Treatment*Guild*Distance, EUCLID2_ENV)
+summary(modpool)
+
+## anoa of the model
+anova<-anova(modpool)
+anova
+
+##anova by terms
+anovab<-anova(modpool, by="terms")
+anovab
+
+
+#### figure RDA for the paper
+ii=summary(modpool)  #View analysis results
+sp=as.data.frame(ii$species[,1:2])*2#Depending on the drawing result, the drawing data can be enlarged or reduced to a certain extent, as follows
+st=as.data.frame(ii$sites[,1:2])
+yz=as.data.frame(ii$biplot[,1:2])
+
+
+#select species >0.1 correlation with axis of RDA
+#sp2<-sp %>% filter_at(vars(RDA1),any_vars((. > 0.1) &(.<-0.1)))
+
+sp2 <- sp
+
+# columns with order, family, genus and species names
+ListTaxoNames <- strsplit(rownames(sp2), "_")
+
+# make df each column is family, genus, species name when known
+df <- data.frame(t(sapply(ListTaxoNames, '[', seq(max(sapply(ListTaxoNames, length))))))
+colnames(df) <- c("Order", "Family", "Genus", "species")
+
+# replace "gr" by species names for three carabids
+levels(df$species) <- c(levels(df$species), as.character(df[which(!is.na(df[,5])),]$'NA')) # first add factor levels
+df[which(!is.na(df[,5])),]$species <- df[which(!is.na(df[,5])),]$'NA' # replace
+
+# clean df
+df <- df[,1:4]
+# head(df)
+# head(sp)
+
+# add taxa names to the species list that will be plotted
+sp3 <- cbind(sp, df)
+
+
+
+# subset influential species for plot
+spsub <- sp3 %>% filter(RDA1 > 0.4 | RDA1 < -0.4|RDA2 > 0.4| RDA2 < -0.4)
+# spsub <- sp3 %>% filter(RDA1 > 0.2 | RDA1 < -0.2|RDA2 > 0.2| RDA2 < -0.2)
+spsub2 <- spsub %>% filter(RDA1 < 0)
+spsub3 <- spsub %>% filter(RDA1 > 0)
+
+# species name for the figure
+spsub2$code <-  (ifelse(is.na(spsub2$species), paste(as.character(spsub2$Family)),
+               paste(as.character(spsub2$Genus), as.character(spsub2$species))))
+spsub3$code <-  (ifelse(is.na(spsub3$species), paste(as.character(spsub3$Family), "sp."),
+                        paste(as.character(spsub3$Genus), as.character(spsub3$species))))
+
+# species names to rownames
+rownames(spsub2) <- spsub2$code
+rownames(spsub3) <- spsub3$code
+
+# colours from Léa
+mycols <- c("#F2DA02",scales::viridis_pal(begin = 0.5)(2)[1])
+
+# set sizes
+sizetext <- 18
+sizelegend <- 15
+
+# set resolution
+ppi <- 600# final: 600 # resolution
+w <- 20 # width in cm
+
+### RDA plot
+# detach(EUCLID2)
+attach(EUCLID2_ENV)
+ComPlot<-ggplot() +  
+  
+  geom_hline(yintercept=0,linetype=1,size=0.5) + 
+  geom_vline(xintercept=0,linetype=1,size=0.5)+
+  
+  geom_point(data = st,aes(RDA1,RDA2,group=Treatment,shape=Guild,color=Treatment),size=5)+
+  scale_shape_manual(values = c(15,16)) + scale_color_manual(values=mycols) + scale_fill_viridis()+
+  geom_segment(data = spsub2,aes(x = 0, y = 0, xend = RDA1, yend = RDA2), 
+               arrow = arrow(angle=22.5,length = unit(0.35,"cm"),
+                             type = "closed"),linetype=1, size=0.6,colour = "gray") +
+  
+  geom_text_repel(data = spsub2,aes(RDA1,RDA2,label=row.names(spsub2)), 
+                  nudge_x=-1,
+                  hjust = 1, 
+                  direction="y", 
+                  max.overlaps = 13, 
+                  box.padding = 0.5,
+                  segment.linetype = 3,
+                  segment.size = 0.3, size = 4)+
+  
+  geom_segment(data = spsub3,aes(x = 0, y = 0, xend = RDA1, yend = RDA2), 
+               arrow = arrow(angle=22.5,length = unit(0.35,"cm"),
+                             type = "closed"),linetype=1, size=0.6,colour = "gray") +
+  geom_text_repel(data = spsub3,aes(RDA1,RDA2,label=row.names(spsub3)), 
+                  nudge_x=1, 
+                  direction="y", 
+                  box.padding = 0.5, 
+                  max.overlaps = 13, 
+                  hjust = 0,
+                  segment.linetype = 3,
+                  segment.size = 0.3, 
+                  size = 4)+ 
+  
+  geom_segment(data = yz[3,],aes(x = 0, y = 0, xend = RDA1, yend = RDA2), 
+               arrow = arrow(angle=22.5,length = unit(0.35,"cm"),
+                             type = "closed"),linetype=1, size=0.6,colour = "black")+  
+  geom_text_repel(data = yz[3,],
+                  aes(RDA1+0.1,RDA2,label=c("landscape")), 
+                  nudge_x = 0.1,
+                  # box.padding = 0.6, 
+                  segment.size = 0.3, 
+                  size = 4) +
+  labs(x=paste("RDA 1 (", format(100 *ii$cont[[1]][2,1], digits=4), "%)", sep=""),
+       y=paste("RDA 2 (", format(100 *ii$cont[[1]][2,2], digits=4), "%)", sep="")) +
+  
+  #guides(shape=guide_legend(title="GUILD",color=mycols),
+  #fill=guide_legend(title="GUILD",color=mycols))+
+  scale_x_continuous(
+    expand = expansion(mult = 0.6)
+  )+
+  theme_bw()+
+  theme(panel.grid=element_blank(),
+        legend.text=element_text(size=sizelegend-3),
+        legend.title = element_text(size =sizelegend),
+        axis.title = element_text(size = sizetext),
+        axis.text = element_text(size = sizetext))
+
+##pour finaliser la figure avec nudge_x et Hjust 
+# aller voir pour de l'info : https://cran.r-project.org/web/packages/ggrepel/vignettes/ggrepel.html#limit-labels-to-a-specific-area
+
+#geom_text_repel(data = st,aes(RDA1,RDA2,label=row.names(st)),size=4)
+
+ComPlot
+
+# save a png with high res
+png("Figures/Fig3.png",
+    width=w,
+    height=w/1.2,
+    units = "cm",
+    res=ppi)
+
+ComPlot
+dev.off()
+
+
+#  #sauvegarde
+# ggsave("Fig3_final.png",plot=ComPlot, width= 20, height=16, units="cm", device="png", path="/Users/adrienrusch/Library/Mobile Documents/com~apple~CloudDocs/Projets 2018/SECBIVIT Biodiversa/Léa Beaumelle/PlotPapier",dpi=150)
