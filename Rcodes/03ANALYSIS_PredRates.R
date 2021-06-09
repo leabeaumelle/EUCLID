@@ -3,7 +3,7 @@
 # The script tests the effects of flower strips, landscape on Lobesia eggs predation
 # Model selection, model assumption checks, and results stored into output folder.
 
-## Main Analysis - Landscape*FlowerStrips + NatEnemies
+## Main Analysis -
 
 # Y ~ Landscp*Treatment + Treatment*Distc + NatEnemiesDensity + (1|Site/Session)
 

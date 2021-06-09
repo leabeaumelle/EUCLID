@@ -1,9 +1,9 @@
 ## Models for natural enemies richness
 
-# The scripts tests the effects of flower strips, landscape on Nat enemies genus richness
+# The script tests the effects of flower strips, landscape on Nat enemies genus richness
 # Model selection, model assumption checks, and results stored into output folder.
 
-## Main Analysis - Landscape*PlantDiv*Guild
+## Main Analysis -
 
 # Y ~ Landscp*Treatment*Guild + Treatment*Distc*Guild + (1|Site:Session)
 
