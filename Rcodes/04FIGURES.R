@@ -427,7 +427,7 @@ spsub3 <- spsub %>% filter(RDA1 > 0)
 # species name for the figure
 spsub2$code <-  (ifelse(is.na(spsub2$species), paste(as.character(spsub2$Family)),
                paste(as.character(spsub2$Genus), as.character(spsub2$species))))
-spsub3$code <-  (ifelse(is.na(spsub3$species), paste(as.character(spsub3$Family), "sp."),
+spsub3$code <-  (ifelse(is.na(spsub3$species), paste(as.character(spsub3$Family)),
                         paste(as.character(spsub3$Genus), as.character(spsub3$species))))
 
 # species names to rownames
@@ -522,6 +522,3 @@ png("Figures/Fig3.png",
 ComPlot
 dev.off()
 
-
-#  #sauvegarde
-# ggsave("Fig3_final.png",plot=ComPlot, width= 20, height=16, units="cm", device="png", path="/Users/adrienrusch/Library/Mobile Documents/com~apple~CloudDocs/Projets 2018/SECBIVIT Biodiversa/Léa Beaumelle/PlotPapier",dpi=150)

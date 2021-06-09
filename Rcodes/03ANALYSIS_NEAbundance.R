@@ -1,9 +1,9 @@
 ## Models for natural enemies abundance
 
-# The scripts tests the effects of flower strips, landscape on Nat enemies densities
+# The script tests the effects of flower strips, landscape on Nat enemies densities
 # Model selection, model assumption checks, and results stored into output folder.
 
-## Main Analysis - Landscape*FlowerStrips*Community
+## Main Analysis
 
 # Y ~ Landscp*Treatment*Community + Treatment*Distc*Community + (1|Site/Session)
 
@@ -67,7 +67,7 @@ TaxaList <- read.csv("Output/NatEnemies_raw.csv")
 sum(Abundance$Total)
 sum(Abundance$Total[Abundance$Guild != "Vegetation"])
 
-# frequency of different groups
+# frequency of different groups - total
 TaxaList %>% group_by(order) %>% summarize(100*sum(eff, na.rm = TRUE)/5487)
 
 TaxaList %>% filter(piege != "F") %>% group_by(order) %>% summarize(100*sum(eff, na.rm = TRUE)/5148)
@@ -125,10 +125,6 @@ boxplot(Abundance$Total ~ factor(Abundance$Site), varwidth = TRUE)
 plot(Abundance$Total ~ factor(Abundance$session), varwidth = TRUE)
 xyplot(Total ~ factor(Site):factor(session), data = Abundance)
 
-
-## Is a random effect on the Site necessary? (https://stackoverflow.com/questions/53034261/warning-lme4-model-failed-to-converge-with-maxgrad)
-# each site has a single landscape value for all observations
-all(rowSums(with(Abs, table(Site, Ldscp))>0)==1)
 
 ## Full models -------------------------------------------------------------------------
 # using dataset Abs where continuous variable are scaled (unscaled vars results in convergence issues)
@@ -294,8 +290,10 @@ plot_model(modOpt, type = "pred", terms = c("Distance [all]", "Guild"))
 
 saveRDS(modOpt, file = "Output/NEAbundance_OptimalModel.rds")
 
-# How many more individuals between treatments on average? ---
 
+
+
+# How many more individuals between treatments on average? ---
 modOpt <- readRDS(file = "Output/NEAbundance_OptimalModel.rds")
 modFull <- readRDS(file = "Output/NEAbundance_FullModel.rds")
 tab_model(modOpt)
@@ -318,16 +316,9 @@ IndPredsFull <- (ggemmeans(modFull, terms = c("Treatment"))[[2]])
 plot(Abs$HSN1000, Abs$Ldscp)
 
 # by how much distance decreases the abundance of NE?
-IndPredsDist <- ggemmeans(modFull, terms = "Distance")[[2]]
-(IndPredsDist[1]-IndPredsDist[3])/IndPredsDist[3]
-100*(IndPredsDist[3])/IndPredsDist[1]
-
-
-# abobve no longer working...
 IndPredDist <- ggemmeans(modOpt, terms = c("Treatment", "Distance"))[[2]]
 100-(100*mean(IndPredDist[3]/IndPredDist[1], IndPredDist[6]/IndPredDist[4]))
 
-## TO DO: remove distance data and look how vine, soil and vegetation guilds are affected by the treatment locally
 
 ## Revisions -----------------------------------------
 
