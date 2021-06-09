@@ -1,11 +1,13 @@
 READ ME
 
-This is the analysis for the EUCLID project investigating the effects of flower strips  on pest control and natural enemies in vineyards.
+This is the analysis for manuscript "Benefits of increased cover crop diversity for predators and biological pest control depend on the landscape context" Beaumelle et al. Ecological Solutions and Evidence.
+
+Study investigates the effects of increasing cover crop diversity  on pest control and natural enemies in vineyards.
 
 
 Design---------------------
 Flower strips versus grassy strips are compared at pairs of plots located at the same site.
-The experiment is replicated across n = 7-9 sites located along a gradient of landscape complexity
+The experiment is replicated across n = 9 sites located along a gradient of landscape complexity
 (i.e. proportion of semi natural habitat in a 1 km radius).
 
 Natural enemies were sampled at each plot using 3 sampling methods (pitfall traps, sweaping nets, 
@@ -13,11 +15,10 @@ and beating nets) targeting three different guilds of natural enemies (soil-, ve
 vine-dwellers), at three distances from the flower or grassy strip (0, 15 and 30 m). Three 
 sampling sessions were conducted (in June, August and September both years). 
 
-Predation of eggs and larbae of Lobesia was measured using sentinel cards. Five cards were
+Predation of eggs and larvae of Lobesia was measured using sentinel cards. Five cards were
 positioned at each sampling location (0, 15 and 30 m from flower or grassy strips). Five 
 sessions were conducted (2 in July, 2 in August and 1 in September).
 
 
+The folder contains all the data associated with the project. Raw data are located in the Data folder, cleaned data are located in the Output folder. Also contains all the codes to replicate the analyses and figures presented in the paper. 
 
-
-The folder contains all the data associated with the project. 
